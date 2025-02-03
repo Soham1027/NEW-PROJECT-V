@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<!-- Plugins css start-->
+
+<!-- Plugins css Ends-->
+{% endblock %}
+
+{% block content %}
+
+{% include "components/loader.html" %}
+
+<div class="page-body">
+      <div class="container-fluid">
+    
+
+      </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %}
+
+{% endblock %}
+{% block script %} 
+<script>new WOW().init();</script>
+{% endblock %}
