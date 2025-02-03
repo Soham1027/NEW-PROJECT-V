@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +42,9 @@ INSTALLED_APPS = [
     'VApp',
     'rest_framework',
     'rest_framework_simplejwt', 
+    'sass_processor',   
+    'widget_tweaks', 
+
 ]
 
 MIDDLEWARE = [
@@ -141,6 +146,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "VApp.User"
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -150,3 +157,31 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'sohamghayal02@gmail.com'
 EMAIL_HOST_PASSWORD = 'vhzttjhigjttsufv'
 DEFAULT_FROM_EMAIL = 'sohamghayal02@gmail.com'
+
+
+STATIC_URL = 'static/'
+STATICFILES_DIRS=[
+    BASE_DIR /'static',  # static files in the project root
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticdatafiles')
+# JWT Configuration
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=160),  # Token validity period
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=365),  # Refresh token validity period
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,     
+    'AUTH_HEADER_TYPES': ('Bearer',),  # Use Bearer tokens for authorization
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT for authentication
+    ),
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',  # Important for file uploads
+        'rest_framework.parsers.FormParser',
+    )
+}

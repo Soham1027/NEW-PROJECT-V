@@ -10,7 +10,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.utils.timezone import now
-
+from django.core.validators import RegexValidator
 
 
 class OTPSave(models.Model):
@@ -104,3 +104,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 'app_user'
+
+
+class PaymentCard(models.Model):
+    card_number = models.CharField(
+        max_length=16,
+        validators=[RegexValidator(r'^\d{16}$', 'Card number must be 16 digits.')],
+        blank=False,
+    )
+    card_holder_name = models.CharField(max_length=100)
+    expiration_date = models.DateField()
+    cvv = models.CharField(max_length=3)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'app_payment_card'
+
+
