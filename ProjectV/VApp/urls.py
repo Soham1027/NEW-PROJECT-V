@@ -26,9 +26,7 @@ urlpatterns = [
 
     # Update a payment card using GET parameter 'id'
     path('payment_card_update/', PaymentCardView.as_view(), name='payment-card-update'),
-    
-    # signup
-    path('signup/', SignupUser.as_view(), name='signup'),
+
 
 ]# Serve media files in development
 if settings.DEBUG:

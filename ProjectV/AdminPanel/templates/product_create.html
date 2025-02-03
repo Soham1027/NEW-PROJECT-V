@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Product{% endblock %}
+{% block content %}
+<div class="page-body">
+    <div class="container-fluid">
+        <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
+            <div class="col-6 col-md-6">
+                <h3>Add Product</h3>
+            </div>
+        </div>
+        <div class="card">
+            <form method="POST" class="form theme-form">
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <h4 class="col-12">Product Details</h4>
+                    </div>
+                    <div style="border-top: 1px solid #ccc; margin-top: 5px; margin-bottom: 20px;"></div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="product_name">Product Name</label>
+                                {{ form.product_name }}
+                                {% if form.product_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.product_name.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="price">Price</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.price.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="description">Description</label>
+                                {{ form.description }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="item_view">Item View Count</label>
+                                {{ form.item_view }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="item_like">Item Like Count</label>
+                                {{ form.item_like }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="recently_viewed">Recently Viewed Date</label>
+                                {{ form.recently_viewed }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <input class="btn btn-light" type="reset" value="Cancel">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

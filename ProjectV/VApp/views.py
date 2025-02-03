@@ -4,7 +4,6 @@ import string
 from django import views
 from django.conf import settings
 from django.db import transaction
-from django.shortcuts import render
 from django.utils.translation import gettext as _
 from rest_framework import status
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
@@ -527,6 +526,3 @@ class PaymentCardView(APIView):
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
     
-class SignupUser(views.View):
-    def get(self,request):
-        return render(request, 'signup.html')

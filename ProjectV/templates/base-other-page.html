@@ -66,6 +66,37 @@
   <!-- Sidebar jquery-->
   <script src="{% static 'assets/js/config.js'%}"></script>
   <!-- Plugins JS start-->
+  {% if messages %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+      document.addEventListener('DOMContentLoaded', function () {
+          {% for message in messages %}
+              Swal.fire({
+                  icon: '{% if message.tags == "error" %}error{% elif message.tags == "success" %}success{% elif message.tags == "warning" %}warning{% elif message.tags == "info" %}info{% endif %}',
+                  title: '{% if message.tags == "error" %}{% elif message.tags == "success" %}{% elif message.tags == "warning" %}{% elif message.tags == "info" %}{% endif %}',
+                  text: '{{ message }}',
+                  background: '{% if message.tags == "error" %}#f8d7da{% elif message.tags == "success" %}#d4edda{% elif message.tags == "warning" %}#fff3cd{% elif message.tags == "info" %}#d1ecf1{% endif %}',
+                  iconColor: '{% if message.tags == "error" %}#721c24{% elif message.tags == "success" %}#155724{% elif message.tags == "warning" %}#856404{% elif message.tags == "info" %}#0c5460{% endif %}',
+                  customClass: {
+                      popup: 'alert alert-dismissible fade show inverse',
+                      title: 'alert-heading',
+                      content: 'alert-text',
+                  },
+                  position: 'top-end',
+                  toast: true,
+                  showConfirmButton: false,
+                  timer: 3000,
+                  timerProgressBar: true,
+                  showCloseButton: true,
+                  didOpen: (toast) => {
+                      toast.addEventListener('mouseenter', Swal.stopTimer)
+                      toast.addEventListener('mouseleave', Swal.resumeTimer)
+                  }
+              });
+          {% endfor %}
+      });
+  </script>
+{% endif %}
 
   {% block scriptscontent %}
 

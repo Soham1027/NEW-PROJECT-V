@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Product Variant{% endblock %}
+{% block content %}
+<div class="page-body">
+    <div class="container-fluid">
+        <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
+            <div class="col-6 col-md-6">
+                <h3>Add Product Variant</h3>
+            </div>
+        </div>
+        <div class="card">
+            <form method="POST" class="form theme-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <h4 class="col-12">Product Variant Details</h4>
+                    </div>
+                    <div style="border-top: 1px solid #ccc; margin-top: 5px; margin-bottom: 20px;"></div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="product">Product</label>
+                                {{ form.product }}
+                                {% if form.product.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.product.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="color">Color</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.color.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="size">Size</label>
+                                {{ form.size }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="quantity">Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="image_file">Image</label>
+                                {{ form.image_file }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="video_story_file">Video Story</label>
+                                {{ form.video_story_file }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="item_discount">Discount</label>
+                                {{ form.item_discount }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <input class="btn btn-light" type="reset" value="Cancel">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
