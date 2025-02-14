@@ -8,12 +8,12 @@ from django.conf.urls.static import static
 urlpatterns = [
      
     # signup
-    path('Adminlogin/', LoginUser.as_view(), name='Adminlogin'),
+    path('Adminlogin/', AdminLoginUser.as_view(), name='Adminlogin'),
  
     path('dashboard/', Home.as_view(), name='dashboard'),
     path('product_create/', ProductCreateView.as_view(), name='product_create'),
     path('product_variant_create/', ProductVariantCreateView.as_view(), name='product_variant_create'),
-
+ 
     
 
 

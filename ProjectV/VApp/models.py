@@ -22,7 +22,7 @@ class OTPSave(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True) 
 
     class Meta:
-        db_table = 'futurestar_app_otpsave'
+        db_table = 'otpsave'
               
 
     def save(self, *args, **kwargs):

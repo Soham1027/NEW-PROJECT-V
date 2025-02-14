@@ -4,7 +4,7 @@ import string
 from django import views
 from django.conf import settings
 from django.db import transaction
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, activate
 from rest_framework import status
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -22,6 +22,9 @@ from django.core.mail import send_mail
 from ProjectV.settings import *
 from django.utils.crypto import get_random_string
 from django.core.files.storage import default_storage
+from rest_framework.generics import ListAPIView
+from django.db.models import Prefetch, Count
+
 # Helper function to generate OTP
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -36,7 +39,7 @@ def get_user_data(user, request):
         'profile_picture': user.profile_picture.url if user.profile_picture else None,
         # 'device_type': user.device_type,
         # 'device_token': user.device_token,
-        'current_language': getattr(user, 'current_language', None),
+        # 'current_language': getattr(user, 'current_language', None),
     }
 
 # Class for User Registration
@@ -110,13 +113,15 @@ class RegisterUser(APIView):
             return Response({'status': 0, 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class DataLogin(APIView):
+
+class LoginUser(APIView):
     permission_classes = [AllowAny]
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     @csrf_exempt
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
+        password = request.data.get('password')
 
         # Validate email format
         if not email:
@@ -134,31 +139,6 @@ class DataLogin(APIView):
                 'status': 0,
                 'message': _('Invalid email format.')
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            with transaction.atomic():
-                # Here you can perform any database operations if needed
-                request.session['user_email'] = email
-                return Response({
-                    'status': 1,
-                
-                }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({
-                'status': 0,
-                'message': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class LoginUser(APIView):
-    permission_classes = [AllowAny]
-    parser_classes = (JSONParser, MultiPartParser, FormParser)
-
-    @csrf_exempt
-    def post(self, request, *args, **kwargs):
-        email = request.session.get('user_email')
-        password = request.data.get('password')
 
         # Validate required fields
         if not password:
@@ -203,6 +183,8 @@ class LoginUser(APIView):
                 'status': 0,
                 'message': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 class LogoutUser(APIView):
     permission_classes = [AllowAny]
     parser_classes = (JSONParser, MultiPartParser, FormParser)
@@ -231,11 +213,14 @@ class SendOTP(APIView):
     
     def post(self, request, *args, **kwargs):
         # Get the email from the session
-        email = request.session.get('user_email')
+        email = request.data.get('email')
         is_phone = request.query_params.get('is_phone', False)  # Properly get the query param
 
         if not email:
-            return Response({'status': 0, 'message': _('User not logged in.')}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'status': 0,
+                'message': _('Email is required.')
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Get the user associated with the email
         user = User.objects.filter(email=email).first()
@@ -288,7 +273,7 @@ class VerifyOTP(APIView):
 
     def post(self, request, *args, **kwargs):
         # Get necessary data from request
-        email = request.session.get('user_email')
+        email = request.data.get('email')
         is_phone = request.query_params.get('is_phone', False)  # Properly get the query param
         otp_input = request.data.get("otp")
 
@@ -340,7 +325,7 @@ class ForgotPasswordAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         # Get the email from the session
-        user_email = request.session.get('user_email')
+        user_email = request.data.get('email')
 
         if not user_email:
             return Response({
@@ -383,7 +368,7 @@ class ForgotPasswordAPIView(APIView):
         # Update the password
         user.password = make_password(new_password)
         user.save()
-        request.session.clear()
+     
 
         return Response({
             'status': 1,
@@ -525,4 +510,215 @@ class PaymentCardView(APIView):
             'message': 'Validation failed.',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+
+class NewProductListView(ListAPIView):
+    serializer_class = ProductItemSerializer
+
+    def get_queryset(self):
+        # Prefetch related images and filter for default images
+        return ProductItem.objects.prefetch_related(
+            Prefetch('images', queryset=ProductImages.objects.filter(is_default=True), to_attr='default_images')
+        ).order_by('-created_at')[:10]  # Get the latest 10 items
+
+    def list(self, request, *args, **kwargs):
+        # Get the queryset and serialize it
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Return a custom response
+        return Response({
+            'status': 1,
+            'message': 'Product fetched successfully.',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class ProductDetail(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        product_id = request.query_params.get('id')  # Get ID from query params
+        if not product_id:
+            return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = ProductItem.objects.prefetch_related('images', 'variants').get(id=product_id)
+            product.recently_viewed = timezone.localtime(timezone.now())
+            product.save()
+
+            serializer = ProductDetailSerializer(product)
+            return Response({
+                'status': 1,
+                'message': 'Product fetched successfully.',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+         
+        except ProductItem.DoesNotExist:
+            return Response({
+                'status': 0,
+                'message': 'Product not found.',
+                'errors': {}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+  
+###################### Product LIKE ##################################
+class ProductLikeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get('Language', 'en')
+        if language in ['en', 'ar']:
+            activate(language)
+
+        # Get product ID from request data
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({
+                'status': 0,
+                'message': _('Product ID is required.')
+            }, status=400)
+
+        # Validate if the product exists
+        try:
+            product = ProductItem.objects.get(id=product_id)
+        except ProductItem.DoesNotExist:
+            return Response({
+                'status': 0,
+                'message': _('Product not found.')
+            }, status=404)
+
+        # Get user ID (defaults to authenticated user)
+        created_by_id = request.data.get('created_by_id', request.user.id)
+
+        # Validate liker (ensure user exists)
+        try:
+            liker = User.objects.get(id=created_by_id)
+        except User.DoesNotExist:
+            return Response({
+                'status': 0,
+                'message': _('Invalid user ID.')
+            }, status=400)
+
+        # Toggle Like/Unlike
+        product_like, created = ProductLike.objects.get_or_create(
+            created_by_id=created_by_id, products=product
+        )
+
+        if not created:
+            # Unlike the product
+            product_like.delete()
+            message = _('Product unliked successfully.')
+        else:
+            # Like the product
+            product_like.date_liked = timezone.localtime(timezone.now())
+            product_like.save()
+            message = _('Product liked successfully.')
+
+        # Serialize product details
+        serializer = ProductDetailSerializer(product, context={'request': request})
+
+        return Response({
+            'status': 1,
+            'message': message,
+            'data': serializer.data
+        }, status=200)
+
+class PopularProductList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get('Language', 'en')
+        if language in ['en', 'ar']:
+            activate(language)
+
+        # Get top 10 most liked products with their like counts
+        product_likes = ProductLike.objects.values('products').annotate(
+            like_count=Count('products')
+        ).order_by('-like_count')[:10]  # Ensure descending order
+        print(product_likes)
+
+        # Fetch product details
+        product_ids = [p['products'] for p in product_likes]
+        products = ProductItem.objects.filter(id__in=product_ids)
+      
+        images = ProductImages.objects.filter(product__in=products)
+
+        # Create a mapping of product ID to image URLs
+        product_images_map = {}
+        for image in images:
+            if image.product_id not in product_images_map:
+                product_images_map[image.product_id] = []
+            product_images_map[image.product_id].append(image.image.url) 
+
+        # Create a mapping of product ID to like_count
+        like_count_map = {p['products']: p['like_count'] for p in product_likes}
+
+        # Sort products manually based on like count
+        sorted_products = sorted(products, key=lambda p: like_count_map.get(p.id, 0), reverse=True)
+
+        # Format response manually
+        popular_products = [
+            {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),  # Convert Decimal to string for JSON
+                "description": product.description,
+                "item_view": product.item_view,
+                "images": product_images_map.get(product.id, []),  # Add images to the response
+            
+                "recently_viewed": product.recently_viewed,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+                "like_count": like_count_map.get(product.id, 0),
+            }
+            for product in sorted_products
+        ]
+        return Response({
+                'status': 1,
+                'message': 'Product fetched successfully.',
+                'data': popular_products
+            }, status=status.HTTP_200_OK)
+        
+
+class RecetlyViewProductListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,*args,**kwargs):
+        # Set language preference
+        language = request.headers.get('Language', 'en')
+        if language in ['en', 'ar']:
+            activate(language)
+
+        recent_products = ProductItem.objects.prefetch_related(
+            Prefetch('images', queryset=ProductImages.objects.filter(is_default=True), to_attr='default_images')
+        ).order_by('-recently_viewed')[:10]
+        
+        # Format the response data
+        formatted_products = [
+            {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),  # Convert Decimal to string for JSON
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "default_images": [image.image.url for image in product.default_images],  # Access the default images
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+            }
+            for product in recent_products
+        ]
+
+
+
+        return Response({
+            'status': 1,
+            'message': 'Product fetched successfully.',
+            'data': formatted_products,
+        }, status=status.HTTP_200_OK)
     

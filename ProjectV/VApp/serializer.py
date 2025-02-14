@@ -3,7 +3,7 @@ from .models import *
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-
+from AdminPanel.models import *
 
 class PaymentCardCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating payment cards (POST)"""
@@ -36,4 +36,42 @@ class PaymentCardRetrieveSerializer(serializers.ModelSerializer):
    
         return ret
     
+# Serializer for product items
+class ProductItemSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductItem
+        fields = ['product_name', 'price', 'image']
+
+    def get_image(self, obj):
+        # Get the default image related to this product
+        default_image = obj.images.filter(is_default=True).first()
+        if default_image:
+            return default_image.image.url
+        return None
     
+
+
+class ProductDetailImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImages
+        fields = ['image']
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    size_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductVariant
+        fields = ['color', 'size', 'size_display', 'quantity']
+
+    def get_size_display(self, obj):
+        return dict(ProductVariant.ITEM_SIZE_CHOICES).get(obj.size)
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    images = ProductDetailImageSerializer(many=True, read_only=True)
+    variations = ProductVariantSerializer(many=True, read_only=True, source='variants')
+
+    class Meta:
+        model = ProductItem
+        fields = ['id', 'product_name', 'price', 'description', 'images', 'variations']

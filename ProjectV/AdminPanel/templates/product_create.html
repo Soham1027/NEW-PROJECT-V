@@ -10,7 +10,7 @@
             </div>
         </div>
         <div class="card">
-            <form method="POST" class="form theme-form">
+            <form method="POST" class="form theme-form" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="card-body">
                     <div class="row mb-3">
@@ -23,13 +23,6 @@
                             <div class="mb-3">
                                 <label class="form-label" for="product_name">Product Name</label>
                                 {{ form.product_name }}
-                                {% if form.product_name.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.product_name.errors %}
-                                            <p>{{ error }}</p>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                         </div>
 
@@ -37,13 +30,6 @@
                             <div class="mb-3">
                                 <label class="form-label" for="price">Price</label>
                                 {{ form.price }}
-                                {% if form.price.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.price.errors %}
-                                            <p>{{ error }}</p>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -56,33 +42,30 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="row">
-                        <div class="col-12 col-md-6">
+                        <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="item_view">Item View Count</label>
+                                <label class="form-label" for="description">Item View</label>
                                 {{ form.item_view }}
                             </div>
                         </div>
-
-                        <div class="col-12 col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="item_like">Item Like Count</label>
-                                {{ form.item_like }}
-                            </div>
-                        </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-12 col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="recently_viewed">Recently Viewed Date</label>
-                                {{ form.recently_viewed }}
+                        <div class="col-12 mb-3">
+                            <h5>Product Images</h5>
+                            <div id="image-upload-section">
+                                <div class="image-upload-item mb-3">
+                                    <input type="file" name="images[]" class="form-control" accept="image/*">
+                                    <input type="checkbox" name="default_image[]" class="form-check-input" value="1"> Default
+                                </div>
                             </div>
+                            <button type="button" id="add-image-button" class="btn btn-success">Add Image</button>
                         </div>
                     </div>
-                </div>
+                    
 
+                </div>
                 <div class="card-footer text-end">
                     <button class="btn btn-primary" type="submit">Save</button>
                     <input class="btn btn-light" type="reset" value="Cancel">
@@ -91,4 +74,33 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    document.getElementById("add-image-button").addEventListener("click", function() {
+        var section = document.getElementById("image-upload-section");
+        var newItem = document.createElement("div");
+        newItem.classList.add("image-upload-item", "mb-3");
+        
+        newItem.innerHTML = `
+            <input type="file" name="images[]" class="form-control" accept="image/*">
+            <input type="checkbox" name="default_image[]" class="form-check-input" value="1"> Default
+        `;
+        
+        section.appendChild(newItem);
+        
+        // Ensure only one default image can be selected
+        let checkboxes = section.querySelectorAll('input[name="default_image[]"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                checkboxes.forEach(function(cb) {
+                    if (cb !== checkbox) {
+                        cb.checked = false;
+                    }
+                });
+            });
+        });
+    });
+    
+</script>
 {% endblock %}
