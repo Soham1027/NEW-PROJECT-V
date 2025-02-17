@@ -41,8 +41,8 @@ class ProductItemSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
     class Meta:
-        model = ProductItem
-        fields = ['product_name', 'price', 'image']
+        model = Product
+        fields = ['product_name', 'price', 'image', 'color', 'size', 'quantity', 'item_view', 'recently_viewed']
 
     def get_image(self, obj):
         # Get the default image related to this product
@@ -58,20 +58,23 @@ class ProductDetailImageSerializer(serializers.ModelSerializer):
         model = ProductImages
         fields = ['image']
 
-class ProductVariantSerializer(serializers.ModelSerializer):
-    size_display = serializers.SerializerMethodField()
+# class ProductVariantSerializer(serializers.ModelSerializer):
+#     size_display = serializers.SerializerMethodField()
 
-    class Meta:
-        model = ProductVariant
-        fields = ['color', 'size', 'size_display', 'quantity']
+#     class Meta:
+#         model = ProductVariant
+#         fields = ['color', 'size', 'size_display', 'quantity']
 
-    def get_size_display(self, obj):
-        return dict(ProductVariant.ITEM_SIZE_CHOICES).get(obj.size)
+#     def get_size_display(self, obj):
+#         return dict(ProductVariant.ITEM_SIZE_CHOICES).get(obj.size)
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductDetailImageSerializer(many=True, read_only=True)
-    variations = ProductVariantSerializer(many=True, read_only=True, source='variants')
+    size_display = serializers.SerializerMethodField()
+
+    def get_size_display(self, obj):
+        return dict(Product.ITEM_SIZE_CHOICES).get(obj.size) if obj.size else None
 
     class Meta:
-        model = ProductItem
-        fields = ['id', 'product_name', 'price', 'description', 'images', 'variations']
+        model = Product
+        fields = ['id', 'product_name', 'price', 'description', 'images', 'color', 'size', 'size_display', 'quantity', 'item_view', 'recently_viewed']

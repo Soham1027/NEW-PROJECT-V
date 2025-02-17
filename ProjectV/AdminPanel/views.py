@@ -81,15 +81,15 @@ class ProductCreateView(View):
 
         return render(request, 'product_create.html', {'form': form})
 
-class ProductVariantCreateView(View):
-    def get(self, request):
-        form = ProductVariantForm()
-        return render(request, 'product_variant_create.html', {'form': form})
+# class ProductVariantCreateView(View):
+#     def get(self, request):
+#         form = ProductVariantForm()
+#         return render(request, 'product_variant_create.html', {'form': form})
     
-    def post(self, request):
-        form = ProductVariantForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('dashboard')  # Replace 'dashboard' with your desired path
+#     def post(self, request):
+#         form = ProductVariantForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('dashboard')  # Replace 'dashboard' with your desired path
         
-        return render(request, 'product_variant_create.html', {'form': form})
+#         return render(request, 'product_variant_create.html', {'form': form})

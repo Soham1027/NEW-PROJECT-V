@@ -27,13 +27,13 @@ urlpatterns = [
     # Update a payment card using GET parameter 'id'
     path('payment_card_update/', PaymentCardView.as_view(), name='payment-card-update'),
 
-    path('latest_products/', NewProductListView.as_view(), name='latest_products'),
+   
     
    path('product_detail/', ProductDetail.as_view(), name='product_detail'),
 
    path('product_like/', ProductLikeAPIView.as_view(), name='product_like'),
-   path('popular_product/', PopularProductList.as_view(), name='popular_product'),
-   path('recent_view_product/', RecetlyViewProductListView.as_view(), name='recent_view_product'),
+ 
+   path('product_list/', ProductListView.as_view(), name='product_list'),
 
 
 

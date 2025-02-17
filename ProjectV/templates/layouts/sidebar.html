@@ -51,25 +51,17 @@
             </li>
         
           <li class="sidebar-list"><a class="sidebar-link sidebar-title link-nav" href="{% url 'product_create' %}">
-              <svg class="stroke-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg'%}#stroke-product"></use>
-              </svg>
-              <svg class="fill-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg'%}#fill-product"></use>
+            <svg class="stroke-icon">
+              <use href="{% static 'assets/svg/icon-sprite.svg'%}#stroke-file"></use>
+            </svg>
+            <svg class="fill-icon">
+              <use href="{% static 'assets/svg/icon-sprite.svg'%}#fill-file"></use>
               </svg><span>Product</span></a>
       
         
             
           </li>
-          <li class="sidebar-list"><a class="sidebar-link sidebar-title link-nav" href='{% url "product_variant_create" %}'>
-              <svg class="stroke-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg'%}#stroke-order"></use>
-              </svg>
-              <svg class="fill-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg'%}#fill-order"></use>
-              </svg><span>Variants</span></a>
-          </li>
-          
+   
         </ul>
       </div>
       <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>

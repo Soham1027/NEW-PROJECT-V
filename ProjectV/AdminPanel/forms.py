@@ -12,7 +12,7 @@ class LoginForm(forms.Form):
 
 class ProductForm(forms.ModelForm):
     class Meta:
-        model = ProductItem
+        model = Product
         fields = ['product_name', 'price', 'description', 'item_view', 'recently_viewed']
 
         widgets = {
@@ -81,31 +81,31 @@ class ProductLikeForm(forms.ModelForm):
         }
 
 
-class ProductVariantForm(forms.ModelForm):
-    class Meta:
-        model = ProductVariant
-        fields = ['product', 'color', 'size', 'quantity', 'item_discount']
+# class ProductVariantForm(forms.ModelForm):
+#     class Meta:
+#         model = ProductVariant
+#         fields = ['product', 'color', 'size', 'quantity', 'item_discount']
 
-        widgets = {
-            'product': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'color': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter Product Color'
-            }),
-            'size': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'quantity': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': 0,
-                'value': 0
-            }),
-            'item_discount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': 0,
-                'step': 0.01,
-                'value': 0.00
-            }),
-        }
+#         widgets = {
+#             'product': forms.Select(attrs={
+#                 'class': 'form-control',
+#             }),
+#             'color': forms.TextInput(attrs={
+#                 'class': 'form-control',
+#                 'placeholder': 'Enter Product Color'
+#             }),
+#             'size': forms.Select(attrs={
+#                 'class': 'form-control',
+#             }),
+#             'quantity': forms.NumberInput(attrs={
+#                 'class': 'form-control',
+#                 'min': 0,
+#                 'value': 0
+#             }),
+#             'item_discount': forms.NumberInput(attrs={
+#                 'class': 'form-control',
+#                 'min': 0,
+#                 'step': 0.01,
+#                 'value': 0.00
+#             }),
+#         }
