@@ -598,7 +598,7 @@ class ProductLikeAPIView(APIView):
             message = _('Product liked successfully.')
 
         # Serialize product details
-        serializer = ProductDetailSerializer(product, context={'request': request})
+        serializer = ProductItemSerializer(product, context={'request': request})
 
         return Response({
             'status': 1,

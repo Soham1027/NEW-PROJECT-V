@@ -74,6 +74,8 @@ class ProductImages(models.Model):
         ordering = ['-created_at']
         db_table = 'product_images'
 
+
+
 class ProductLike(models.Model):
  
 

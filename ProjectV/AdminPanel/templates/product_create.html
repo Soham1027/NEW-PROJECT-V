@@ -42,10 +42,11 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="description">Item View</label>
+                                <label class="form-label" for="item_view">Item View</label>
                                 {{ form.item_view }}
                             </div>
                         </div>
@@ -63,7 +64,49 @@
                             <button type="button" id="add-image-button" class="btn btn-success">Add Image</button>
                         </div>
                     </div>
-                    
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="color">Color</label>
+                                <input type="color" id="color" name="color" class="form-control" value="{{ form.color.value|default:'#000000' }}">
+                                {% if form.color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.color.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="size">Size</label>
+                                {{ form.size }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="quantity">Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="item_discount">Discount</label>
+                                {{ form.item_discount }}
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
                 <div class="card-footer text-end">

@@ -13,7 +13,7 @@ class LoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['product_name', 'price', 'description', 'item_view', 'recently_viewed']
+        fields = ['product_name', 'price', 'description', 'color', 'size', 'quantity', 'item_discount', 'item_view', 'recently_viewed']
 
         widgets = {
             'product_name': forms.TextInput(attrs={
@@ -30,6 +30,23 @@ class ProductForm(forms.ModelForm):
                 'placeholder': 'Enter Product Description',
                 'rows': 3
             }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Product Color'
+            }),
+            'size': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'value': 0
+            }),
+            'item_discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': 0.01,
+                'min': 0
+            }),
             'item_view': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0,
@@ -40,8 +57,6 @@ class ProductForm(forms.ModelForm):
                 'type': 'datetime-local'
             }),
         }
-
-
 class ProductImagesForm(forms.ModelForm):
     class Meta:
         model = ProductImages
