@@ -37,21 +37,30 @@ class PaymentCardRetrieveSerializer(serializers.ModelSerializer):
         return ret
     
 # Serializer for product items
-class ProductItemSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+# class ProductItemSerializer(serializers.ModelSerializer):
+#     images = ProductDetailImageSerializer(many=True, read_only=True)
+#     size_display = serializers.SerializerMethodField()
+#     category_name = serializers.SerializerMethodField()
+#     subcategory_name = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Product
-        fields = ['product_name', 'price', 'image', 'color', 'size', 'quantity', 'item_view', 'recently_viewed']
-
-    def get_image(self, obj):
-        # Get the default image related to this product
-        default_image = obj.images.filter(is_default=True).first()
-        if default_image:
-            return default_image.image.url
-        return None
+#     def get_size_display(self, obj):
+#         return dict(Product.ITEM_SIZE_CHOICES).get(obj.size) if obj.size else None
+    
+   
     
 
+#     class Meta:
+#         model = Product
+#         fields = ['id', 'product_name', 'price', 'description', 'images', 'color', 'category','category_name','subcategory',
+#                   'subcategory_name', 'gender', 'size_display', 'quantity', 'item_view', 'recently_viewed']
+
+#     def get_category_name(self, obj):
+#         """Return category name if exists"""
+#         return obj.category.category_name if obj.category else None
+
+#     def get_subcategory_name(self, obj):
+#         """Return subcategory name if exists"""
+#         return obj.subcategory.sub_category_name if obj.subcategory else None
 
 class ProductDetailImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,10 +80,30 @@ class ProductDetailImageSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductDetailImageSerializer(many=True, read_only=True)
     size_display = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    subcategory_name = serializers.SerializerMethodField()
 
     def get_size_display(self, obj):
         return dict(Product.ITEM_SIZE_CHOICES).get(obj.size) if obj.size else None
+    
+   
+    
 
     class Meta:
         model = Product
-        fields = ['id', 'product_name', 'price', 'description', 'images', 'color', 'size', 'size_display', 'quantity', 'item_view', 'recently_viewed']
+        fields = ['id', 'product_name', 'price', 'description', 'images', 'color', 'category','category_name','subcategory',
+                  'subcategory_name', 'gender', 'size_display', 'quantity', 'item_view', 'recently_viewed','created_at','updated_at']
+
+    def get_category_name(self, obj):
+        """Return category name if exists"""
+        return obj.category.category_name if obj.category else None
+
+    def get_subcategory_name(self, obj):
+        """Return subcategory name if exists"""
+        return obj.subcategory.sub_category_name if obj.subcategory else None
+    
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['created_at']=instance.created_at.strftime('%Y-%m-%d')
+        ret['updated_at']=instance.updated_at.strftime('%Y-%m-%d')
+        return ret

@@ -1,8 +1,9 @@
 from django.views import View
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 from .forms import *
 from django.contrib.auth import authenticate,login
+from django.http import JsonResponse
 from VApp.models import *
 
 # Create your views here.
@@ -35,18 +36,31 @@ class Home(View):
     def get(self, request):
         return render(request, 'index.html')
 
+def get_subcategories(request):
+    category_id = request.GET.get('category_id')
+    
+    if category_id:
+        category = get_object_or_404(ProductCategory, id=category_id)
+        subcategories = SubCategory.objects.filter(category=category)
+    else:
+        subcategories = SubCategory.objects.all()
+
+    subcategories_data = subcategories.values('id', 'sub_category_name')
+    return JsonResponse(list(subcategories_data), safe=False)
 class ProductCreateView(View):
     def get(self, request):
         form = ProductForm()
+     
         return render(request, 'product_create.html', {'form': form})
 
     def post(self, request):
         print(request.FILES)
         form = ProductForm(request.POST)
+      
 
         if form.is_valid():
-            # Save the product form to create the product instance
             product = form.save()
+        
 
             # Handle multiple image uploads
             images = request.FILES.getlist('images[]')  # Get the list of image files
@@ -79,7 +93,62 @@ class ProductCreateView(View):
         # Print form errors for debugging
         print(form.errors)
 
-        return render(request, 'product_create.html', {'form': form})
+        return render(request, 'product_create.html',  {'form': form})
+
+class ProductCategoryCreateView(View):
+    def get(self, request):
+        form = ProductCategoryForm()
+        return render(request, 'product_category.html', {'form': form})
+    
+    def post(self, request):
+        form = ProductCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')  # Ensure 'dashboard' is a valid URL name
+        
+        return render(request, 'product_category.html', {'form': form})
+
+class SubCategoryCreateView(View):
+    def get(self, request):
+        form = SubCategoryForm()
+        return render(request, 'sub_category.html', {'form': form})
+
+    def post(self, request):
+        form = SubCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')  # Redirect to relevant page
+        
+        return render(request, 'sub_category.html', {'form': form})
+
+
+
+class ProductPercentageView(View):
+    def get(self, request):
+        form = ProductDiscountForm()
+        return render(request, 'product_discount.html', {'form': form})
+
+    def post(self, request):
+        form = ProductDiscountForm(request.POST)
+        if form.is_valid():
+            # Save a discount for each selected product
+            discount_percentage = form.cleaned_data['discount_percentage']
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            products = form.cleaned_data['product']  # This will be a list of selected products
+
+            # Create a discount for each selected product
+            for product in products:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_percentage=discount_percentage,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+            
+            return redirect('dashboard')  # Replace 'dashboard' with your desired path
+        
+        return render(request, 'product_discount.html', {'form': form})
 
 # class ProductVariantCreateView(View):
 #     def get(self, request):

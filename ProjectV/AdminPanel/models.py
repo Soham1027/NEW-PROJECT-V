@@ -7,7 +7,7 @@ from django.utils.timezone import now
 import os
 from uuid import uuid4
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator,MaxValueValidator
 
 def product_image_upload_path(instance, filename):
     """
@@ -18,6 +18,39 @@ def product_image_upload_path(instance, filename):
     unique_id = uuid.uuid4().hex[:8]  # Generate an 8-character unique ID
     filename = f"{instance.product.id}_{unique_id}.{ext}"
     return os.path.join("product_images", filename)
+
+class ProductCategory(models.Model):
+    id = models.AutoField(primary_key=True)
+    # product = models.ForeignKey(Product, related_name='categories', on_delete=models.CASCADE)
+    category_name = models.CharField(max_length=100, unique=True)  # Make category names unique
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.category_name
+
+    class Meta:
+        verbose_name_plural = 'Product Categories'
+        ordering = ['category_name']
+        db_table = 'product_categories'
+
+
+class SubCategory(models.Model):
+    id = models.AutoField(primary_key=True)
+    category = models.ForeignKey(ProductCategory, related_name='subcategories', on_delete=models.CASCADE)
+    sub_category_name = models.CharField(max_length=100, unique=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.sub_category_name}"
+
+    class Meta:
+        verbose_name_plural = 'Subcategories'
+        ordering = ['sub_category_name']
+        db_table = 'sub_categories'
 class Product(models.Model):
     ITEM_SIZE_CHOICES = [
         (1, 'Extra Small'),
@@ -29,6 +62,21 @@ class Product(models.Model):
         (7, 'XXXL'),
     ]
 
+    SHOES_SIZE_CHOICES = [
+        (1, '6'),
+        (2, '7'),
+        (3, '8'),
+        (4, '9'),
+        (5, '10'),
+        (6, '11'),
+        (7, '12'),
+    ]
+    GENDER_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('All', 'All'),
+    ]
+
     id = models.AutoField(primary_key=True)
     product_name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -36,8 +84,12 @@ class Product(models.Model):
     
     color = models.CharField(max_length=50, blank=True, null=True)
     size = models.IntegerField(choices=ITEM_SIZE_CHOICES, blank=True, null=True)
+    shoes_size = models.IntegerField(choices=SHOES_SIZE_CHOICES, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)], default=0)
-    item_discount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)], default=0.00)
+ 
+    category = models.ForeignKey(ProductCategory, related_name='products', on_delete=models.CASCADE,blank=True, null=True)
+    subcategory = models.ForeignKey(SubCategory, related_name='subproducts', on_delete=models.CASCADE, blank=True, null=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     
     item_view = models.PositiveIntegerField(default=0)
     recently_viewed = models.DateTimeField(blank=True, null=True)
@@ -56,6 +108,21 @@ class Product(models.Model):
         verbose_name_plural = 'Products'
         ordering = ['-item_view', '-recently_viewed']
         db_table = 'products'
+
+class ProductDiscount(models.Model):
+    id = models.AutoField(primary_key=True)
+    product = models.ForeignKey(Product, related_name='discounts', on_delete=models.CASCADE)
+    discount_percentage = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    
+    def __str__(self):
+        return f"{self.product.product_name} - {self.discount_percentage}% Off"
+    
+    class Meta:
+        verbose_name_plural = 'Product Discounts'
+        ordering = ['-start_date', '-end_date']
+        db_table = 'product_discounts'
 
 
 class ProductImages(models.Model):

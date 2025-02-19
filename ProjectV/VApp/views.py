@@ -24,8 +24,13 @@ from django.utils.crypto import get_random_string
 from django.core.files.storage import default_storage
 from rest_framework.generics import ListAPIView
 from django.db.models import Prefetch, Count
-from django.db.models import Count, Prefetch, OuterRef, Subquery, Value, IntegerField
+from django.db.models import Count, Prefetch, OuterRef, Subquery, Value, IntegerField, Q
 from django.db.models.functions import Coalesce
+from AdminPanel.models import *
+from django.db.models.functions import Lower
+
+
+
 # Helper function to generate OTP
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -598,7 +603,7 @@ class ProductLikeAPIView(APIView):
             message = _('Product liked successfully.')
 
         # Serialize product details
-        serializer = ProductItemSerializer(product, context={'request': request})
+        serializer = ProductDetailSerializer(product, context={'request': request})
 
         return Response({
             'status': 1,
@@ -682,11 +687,20 @@ class ProductListView(ListAPIView):
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
                 "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                'gender': product.gender,
+                'size': product.size,
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+                'recently_viewed': product.recently_viewed,
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
                 "like_count": product.like_count,  
             }
             for product in popular_products
+              
         ]
 
         # Format response for recent products
@@ -694,12 +708,21 @@ class ProductListView(ListAPIView):
             {
                 "id": product.id,
                 "product_name": product.product_name,
-                "price": str(product.price),
+                "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
-                "default_images": [img.image.url for img in product.default_images],
+                "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                'gender': product.gender,
+                'size': product.size,
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+                'recently_viewed': product.recently_viewed,
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
+              
             }
             for product in recent_products
         ]
@@ -707,14 +730,23 @@ class ProductListView(ListAPIView):
         # Format response for new products
         formatted_new_products = [
             {
-                "id": product.id,
+                 "id": product.id,
                 "product_name": product.product_name,
-                "price": str(product.price),
+                "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
-                "default_images": [img.image.url for img in product.default_images],
+                "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                'gender': product.gender,
+                'size': product.size,
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+                'recently_viewed': product.recently_viewed,
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
+             
             }
             for product in new_products
         ]
@@ -728,6 +760,114 @@ class ProductListView(ListAPIView):
                     "new_products": formatted_new_products,
                     "popular_products": formatted_popular_products,
                 },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class ProductCategoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Fetch all products
+        products = Product.objects.all()
+
+        # Categorize products
+        categorized_products = {
+            "clothing": [],
+            "shoes": [],
+            "accessories": [],
+            "bags": [],
+            "lingerie": []
+        }
+
+        for product in products:
+            # Get default product image
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+
+            product_data = {
+                "id": product.id,
+                "name": product.product_name,
+                "price": float(product.price),
+                "color": product.color,
+                "size": product.get_size_display() if product.size else None,
+                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+                "quantity": product.quantity,
+                "discount": float(product.item_discount),
+                "category": product.category.category_name if product.category else None,
+                "image": image_url
+            }
+
+            if product.category:
+                category_name = product.category.category_name.lower()
+
+                if "shoes" in category_name:
+                    categorized_products["shoes"].append(product_data)
+                elif "accessory" in category_name or "accessories" in category_name:
+                    categorized_products["accessories"].append(product_data)
+                elif "bag" in category_name or "bags" in category_name:
+                    categorized_products["bags"].append(product_data)
+                elif "lingerie" in category_name:
+                    categorized_products["lingerie"].append(product_data)
+                else:
+                    categorized_products["clothing"].append(product_data)
+            else:
+                categorized_products["clothing"].append(product_data)
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": {
+                  
+                    "products": categorized_products,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+        
+
+
+class CategoriesProductDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        category = request.query_params.get("category", "").strip().lower()
+        sub_category = request.query_params.get("sub_category", "").strip().lower()
+
+        # Fetch products matching the category and subcategory
+        products = Product.objects.filter(
+            subcategory__sub_category_name=sub_category,
+         
+           
+        )
+        
+        print(products)
+
+        # Serialize products and include default image
+        serialized_products = []
+        for product in products:
+            product_data = ProductDetailSerializer(product).data
+
+            # Fetch default product image
+            
+            serialized_products.append(product_data)
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": serialized_products,
             },
             status=status.HTTP_200_OK,
         )

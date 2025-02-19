@@ -13,7 +13,7 @@ class LoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['product_name', 'price', 'description', 'color', 'size', 'quantity', 'item_discount', 'item_view', 'recently_viewed']
+        fields = ['product_name', 'price', 'description', 'color', 'size','shoes_size','gender', 'quantity', 'item_view', 'recently_viewed', 'category', 'subcategory']
 
         widgets = {
             'product_name': forms.TextInput(attrs={
@@ -37,16 +37,19 @@ class ProductForm(forms.ModelForm):
             'size': forms.Select(attrs={
                 'class': 'form-control',
             }),
+            'shoes_size': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+
+            'gender': forms.Select(attrs={
+                'class': 'form-control',
+            }),
             'quantity': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0,
                 'value': 0
             }),
-            'item_discount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': 0.01,
-                'min': 0
-            }),
+           
             'item_view': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0,
@@ -56,7 +59,48 @@ class ProductForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local'
             }),
+             'category': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'category',  # Add an ID for JavaScript targeting
+            }),
+            'subcategory': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'subcategory',  # Add an ID for JavaScript targeting
+            }),
         }
+        def __init__(self, *args, **kwargs):
+            category_id = kwargs.pop('category_id', None)
+            super().__init__(*args, **kwargs)
+            
+            if category_id:
+                self.fields['subcategory'].queryset = SubCategory.objects.filter(category_id=category_id)
+            else:
+                self.fields['subcategory'].queryset = SubCategory.objects.none()
+
+
+class ProductCategoryForm(forms.ModelForm):
+    class Meta:
+        model = ProductCategory
+        fields = ['category_name']
+        widgets = {
+            'category_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Category Name'
+            }),
+        }
+
+class SubCategoryForm(forms.ModelForm):
+    class Meta:
+        model = SubCategory
+        fields = ['category', 'sub_category_name']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'sub_category_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Sub-Category Name'
+            }),
+        }
+
 class ProductImagesForm(forms.ModelForm):
     class Meta:
         model = ProductImages
@@ -90,6 +134,32 @@ class ProductLikeForm(forms.ModelForm):
                 'class': 'form-control',
             }),
             'date_liked': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+        }
+
+
+class ProductDiscountForm(forms.ModelForm):
+    class Meta:
+        model = ProductDiscount
+        fields = ['product', 'discount_percentage', 'start_date', 'end_date']
+
+        widgets = {
+            'product': forms.SelectMultiple(attrs={
+                'class': 'form-control',
+            }),
+            'discount_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'max': 100,
+                'placeholder': 'Enter Discount Percentage'
+            }),
+            'start_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'end_date': forms.DateTimeInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local'
             }),

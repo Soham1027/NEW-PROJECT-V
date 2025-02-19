@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Product Variant{% endblock %}
+{% block css %} 
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+{% block content %}
+<div class="page-body">
+    <div class="container-fluid">
+        <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
+            <div class="col-6 col-md-6">
+                <h3>Add Product Discount</h3>
+            </div>
+        </div>
+        <div class="card">
+            <form method="POST" class="form theme-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <h4 class="col-12">Product Discount Details</h4>
+                    </div>
+                    <div style="border-top: 1px solid #ccc; margin-top: 5px; margin-bottom: 20px;"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="product">Product</label>
+                        {{ form.product }}
+                        {% if form.product.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.product.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label" for="discount_percentage">Discount Percentage</label>
+                        {{ form.discount_percentage }}
+                        {% if form.discount_percentage.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.discount_percentage.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="start_date">Start Date</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.start_date.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="end_date">End Date</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.end_date.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+
+
+                </div>   
+
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <input class="btn btn-light" type="reset" value="Cancel">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scriptcontent %} 
+
+ <!-- Include jQuery (required for Select2) -->
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+ <!-- Include Select2 JS -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+ <script type="text/javascript">
+     $(document).ready(function() {
+         // Initialize Select2 on the product field
+         $('#id_product').select2({
+             width: '100%',
+             placeholder: 'Select products',
+             allowClear: true,
+             closeOnSelect: false  // Allows multiple selections
+         });
+     });
+ </script>
+
+
+{% endblock %}

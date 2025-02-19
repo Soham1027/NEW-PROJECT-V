@@ -34,6 +34,11 @@ urlpatterns = [
    path('product_like/', ProductLikeAPIView.as_view(), name='product_like'),
  
    path('product_list/', ProductListView.as_view(), name='product_list'),
+   path('product_category/', ProductCategoryView.as_view(), name='product_category'),
+   path('product_category_detail/', CategoriesProductDetailView.as_view(), name='product_category_detail'),
+
+
+
 
 
 
