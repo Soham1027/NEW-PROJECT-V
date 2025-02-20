@@ -34,8 +34,13 @@ urlpatterns = [
    path('product_like/', ProductLikeAPIView.as_view(), name='product_like'),
  
    path('product_list/', ProductListView.as_view(), name='product_list'),
-   path('product_category/', ProductCategoryView.as_view(), name='product_category'),
+   # path('product_category/', ProductCategoryView.as_view(), name='product_category'),
    path('product_category_detail/', CategoriesProductDetailView.as_view(), name='product_category_detail'),
+
+   # path('dicounted_product_list/', DiscountedProducts.as_view(), name='dicounted_product_list'),
+   path('random_product_list/', RandomProductList.as_view(), name='random_product_list'),
+
+   path('dicounted_product/', DiscountedDetailedProductView.as_view(), name='dicounted_product'),
 
 
 

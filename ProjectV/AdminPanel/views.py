@@ -131,13 +131,11 @@ class ProductPercentageView(View):
     def post(self, request):
         form = ProductDiscountForm(request.POST)
         if form.is_valid():
-            # Save a discount for each selected product
             discount_percentage = form.cleaned_data['discount_percentage']
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
-            products = form.cleaned_data['product']  # This will be a list of selected products
+            products = form.cleaned_data['product']  # This is now a QuerySet of multiple products
 
-            # Create a discount for each selected product
             for product in products:
                 ProductDiscount.objects.create(
                     product=product,
@@ -146,7 +144,7 @@ class ProductPercentageView(View):
                     end_date=end_date
                 )
             
-            return redirect('dashboard')  # Replace 'dashboard' with your desired path
+            return redirect('dashboard')  # Replace with your redirect URL
         
         return render(request, 'product_discount.html', {'form': form})
 

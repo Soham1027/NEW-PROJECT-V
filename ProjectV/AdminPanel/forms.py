@@ -140,30 +140,21 @@ class ProductLikeForm(forms.ModelForm):
         }
 
 
-class ProductDiscountForm(forms.ModelForm):
-    class Meta:
-        model = ProductDiscount
-        fields = ['product', 'discount_percentage', 'start_date', 'end_date']
-
-        widgets = {
-            'product': forms.SelectMultiple(attrs={
-                'class': 'form-control',
-            }),
-            'discount_percentage': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': 0,
-                'max': 100,
-                'placeholder': 'Enter Discount Percentage'
-            }),
-            'start_date': forms.DateTimeInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local'
-            }),
-            'end_date': forms.DateTimeInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local'
-            }),
-        }
+class ProductDiscountForm(forms.Form):
+    product = forms.ModelMultipleChoiceField(
+        queryset=Product.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'})
+    )
+    discount_percentage = forms.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100, 'placeholder': 'Enter Discount Percentage'})
+    )
+    start_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'})
+    )
+    end_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'})
+    )
 
 
 # class ProductVariantForm(forms.ModelForm):

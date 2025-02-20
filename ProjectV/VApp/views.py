@@ -112,8 +112,9 @@ class RegisterUser(APIView):
                         'user': get_user_data(user, request),
                     }
                 }
+               
 
-                return Response(data, status=status.HTTP_201_CREATED)
+                return Response(data,status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({'status': 0, 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -603,13 +604,41 @@ class ProductLikeAPIView(APIView):
             message = _('Product liked successfully.')
 
         # Serialize product details
-        serializer = ProductDetailSerializer(product, context={'request': request})
+        # serializer = ProductDetailSerializer(product, context={'request': request})
+
+        serialized_products=[]
+      
+        default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+        image_url = default_image.image.url if default_image else None
+
+        product_data = {
+            "id": product.id,
+            "product_name": product.product_name,
+            "price": str(product.price),  # Convert Decimal to string for JSON
+            "description": product.description,
+            "recently_viewed": product.recently_viewed,
+            "image": image_url,
+            'gender': product.gender,
+            'size': product.size,
+            'color': product.color,
+            'category': product.category.category_name,
+            'subcategory': product.subcategory.sub_category_name,
+            'quantity': product.quantity,
+            'item_view': product.item_view,
+            
+            "created_at": product.created_at,
+            "updated_at": product.updated_at,
+            
+
+            
+        }
+        serialized_products.append(product_data)
 
         return Response({
             'status': 1,
             'message': message,
-            'data': serializer.data
-        }, status=200)
+            'data': serialized_products
+        }, status=status.HTTP_200_OK)
 
         
 
@@ -656,6 +685,80 @@ class ProductListView(ListAPIView):
             )
         ).prefetch_related(default_images_prefetch).order_by("-like_count")[:10]
 
+        current_time = now()
+        discounted_products = ProductDiscount.objects.filter(start_date__lte=current_time, end_date__gte=current_time)[:10]
+
+        # Categorize products
+        all_products = Product.objects.all()
+        categorized_products = {"clothing": [], "shoes": [], "accessories": [], "bags": []}
+
+        for product in all_products:
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+
+            product_data = {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),  # Convert Decimal to string for JSON
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": image_url,
+                'gender': product.gender,
+                "size": product.get_size_display() if product.size else None,
+
+                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+              
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+              
+
+
+            
+              
+              
+
+                
+            }
+
+            if product.category:
+                category_name = product.category.category_name.lower()
+                if "shoes" in category_name:
+                    categorized_products["shoes"].append(product_data)
+                elif "accessory" in category_name or "accessories" in category_name:
+                    categorized_products["accessories"].append(product_data)
+                elif "bag" in category_name or "bags" in category_name:
+                    categorized_products["bags"].append(product_data)
+                else:
+                    categorized_products["clothing"].append(product_data)
+
+        # Format response for discounted products
+        formatted_discounted_products = [
+            {
+                "id": discount.product.id,
+                "name": discount.product.product_name,
+                "price": float(discount.product.price),
+                "discounted_price": round(float(discount.product.price - (discount.product.price * discount.discount_percentage / 100)), 2),
+                "discount": discount.discount_percentage,
+                "color": discount.product.color,
+                "size": discount.product.get_size_display() if discount.product.size else None,
+                "shoes_size": discount.product.get_shoes_size_display() if discount.product.shoes_size else None,
+                "quantity": discount.product.quantity,
+                "category": discount.product.category.category_name if discount.product.category else None,
+                "image": ProductImages.objects.filter(product=discount.product, is_default=True).first().image.url if ProductImages.objects.filter(product=discount.product, is_default=True).exists() else None,
+                "start_date": discount.start_date.date(),
+                "end_date": discount.end_date.date(),
+                "start_time": discount.start_date.time(),
+                "end_time": discount.end_date.time(),
+            }
+            for discount in discounted_products
+        ]
+
 
         # Fetch popular products
         # product_likes = (
@@ -686,15 +789,19 @@ class ProductListView(ListAPIView):
                 "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
-                "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                # "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                "image": ProductImages.objects.filter(product=product, is_default=True).first().image.url if ProductImages.objects.filter(product=product, is_default=True).exists() else None,
+
                 'gender': product.gender,
                 'size': product.size,
+                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+
                 'color': product.color,
                 'category': product.category.category_name,
                 'subcategory': product.subcategory.sub_category_name,
                 'quantity': product.quantity,
                 'item_view': product.item_view,
-                'recently_viewed': product.recently_viewed,
+                
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
                 "like_count": product.like_count,  
@@ -711,15 +818,18 @@ class ProductListView(ListAPIView):
                 "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
-                "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                "image": ProductImages.objects.filter(product=product, is_default=True).first().image.url if ProductImages.objects.filter(product=product, is_default=True).exists() else None,
+  # Access preloaded default images
                 'gender': product.gender,
                 'size': product.size,
+                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+
                 'color': product.color,
                 'category': product.category.category_name,
                 'subcategory': product.subcategory.sub_category_name,
                 'quantity': product.quantity,
                 'item_view': product.item_view,
-                'recently_viewed': product.recently_viewed,
+              
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
               
@@ -730,20 +840,22 @@ class ProductListView(ListAPIView):
         # Format response for new products
         formatted_new_products = [
             {
-                 "id": product.id,
+                "id": product.id,
                 "product_name": product.product_name,
                 "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
                 "recently_viewed": product.recently_viewed,
-                "default_images": [img.image.url for img in product.default_images],  # Access preloaded default images
+                "image": ProductImages.objects.filter(product=product, is_default=True).first().image.url if ProductImages.objects.filter(product=product, is_default=True).exists() else None,
                 'gender': product.gender,
                 'size': product.size,
+                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+
                 'color': product.color,
-                'category': product.category.category_name,
-                'subcategory': product.subcategory.sub_category_name,
+                'category': product.category.category_name if product.category else None,
+                'subcategory': product.subcategory.sub_category_name if product.subcategory else None,
                 'quantity': product.quantity,
                 'item_view': product.item_view,
-                'recently_viewed': product.recently_viewed,
+               
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
              
@@ -759,76 +871,84 @@ class ProductListView(ListAPIView):
                     "recent_products": formatted_recent_products,
                     "new_products": formatted_new_products,
                     "popular_products": formatted_popular_products,
+                    "discounted_products": formatted_discounted_products,
+                    "categorized_products": categorized_products,
                 },
             },
             status=status.HTTP_200_OK,
         )
 
-class ProductCategoryView(APIView):
-    permission_classes = [IsAuthenticated]
+# class ProductCategoryView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
-        # Set language preference
-        language = request.headers.get("Language", "en")
-        if language in ["en", "ar"]:
-            activate(language)
+#     def get(self, request, *args, **kwargs):
+#         # Set language preference
+#         language = request.headers.get("Language", "en")
+#         if language in ["en", "ar"]:
+#             activate(language)
 
-        # Fetch all products
-        products = Product.objects.all()
+#         # Fetch all products
+#         products = Product.objects.all()
 
-        # Categorize products
-        categorized_products = {
-            "clothing": [],
-            "shoes": [],
-            "accessories": [],
-            "bags": [],
-            "lingerie": []
-        }
+#         # Categorize products
+#         categorized_products = {
+#             "clothing": [],
+#             "shoes": [],
+#             "accessories": [],
+#             "bags": [],
+           
+#         }
 
-        for product in products:
-            # Get default product image
-            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
-            image_url = default_image.image.url if default_image else None
+#         for product in products:
+#             # Get default product image
+#             default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+#             image_url = default_image.image.url if default_image else None
 
-            product_data = {
-                "id": product.id,
-                "name": product.product_name,
-                "price": float(product.price),
-                "color": product.color,
-                "size": product.get_size_display() if product.size else None,
-                "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
-                "quantity": product.quantity,
-                "discount": float(product.item_discount),
-                "category": product.category.category_name if product.category else None,
-                "image": image_url
-            }
+#             product_data = {
+#                 "id": product.id,
+#                 "name": product.product_name,
+#                 "price": float(product.price),
+#                 "color": product.color,
+#                 "size": product.get_size_display() if product.size else None,
+#                 "shoes_size": product.get_shoes_size_display() if product.shoes_size else None,
+#                 "quantity": product.quantity,
+              
+#                 "category": product.category.category_name if product.category else None,
+#                 "image": image_url
+#             }
 
-            if product.category:
-                category_name = product.category.category_name.lower()
+#             if product.category:
+#                 category_name = product.category.category_name.lower()
 
-                if "shoes" in category_name:
-                    categorized_products["shoes"].append(product_data)
-                elif "accessory" in category_name or "accessories" in category_name:
-                    categorized_products["accessories"].append(product_data)
-                elif "bag" in category_name or "bags" in category_name:
-                    categorized_products["bags"].append(product_data)
-                elif "lingerie" in category_name:
-                    categorized_products["lingerie"].append(product_data)
-                else:
-                    categorized_products["clothing"].append(product_data)
-            else:
-                categorized_products["clothing"].append(product_data)
-        return Response(
-            {
-                "status": 1,
-                "message": "Products fetched successfully.",
-                "data": {
+#                 if "shoes" in category_name:
+#                     categorized_products["shoes"].append(product_data)
+#                 elif "accessory" in category_name or "accessories" in category_name:
+#                     categorized_products["accessories"].append(product_data)
+#                 elif "bag" in category_name or "bags" in category_name:
+#                     categorized_products["bags"].append(product_data)
+#                 else:
+#                     categorized_products["clothing"].append(product_data)
+#             else:
+#                 return Response(
+#                     {
+#                         "status": 0,
+#                         "message": "There are no products.",
+#                         "data": {},
+#                     },
+#                     status=status.HTTP_200_OK,
+#                 )
+                
+#         return Response(
+#             {
+#                 "status": 1,
+#                 "message": "Products fetched successfully.",
+#                 "data": {
                   
-                    "products": categorized_products,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
+#                     "products": categorized_products,
+#                 },
+#             },
+#             status=status.HTTP_200_OK,
+#         )
 
         
 
@@ -847,20 +967,38 @@ class CategoriesProductDetailView(APIView):
 
         # Fetch products matching the category and subcategory
         products = Product.objects.filter(
+            category__category_name=category,
             subcategory__sub_category_name=sub_category,
          
            
         )
         
-        print(products)
-
+        
         # Serialize products and include default image
         serialized_products = []
         for product in products:
-            product_data = ProductDetailSerializer(product).data
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
 
-            # Fetch default product image
-            
+            product_data = {
+                    "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),  # Convert Decimal to string for JSON
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": image_url,
+                'gender': product.gender,
+                'size': product.size,
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+              
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+              
+            }
             serialized_products.append(product_data)
 
         return Response(
@@ -871,3 +1009,191 @@ class CategoriesProductDetailView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+
+# class DiscountedProducts(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request, *args, **kwargs):
+#         # Set language preference
+#         language = request.headers.get("Language", "en")
+#         if language in ["en", "ar"]:
+#             activate(language)
+
+#         # Get all discounted products where the discount is active
+#         current_time = now()
+#         print(current_time)
+#         discounted_products = ProductDiscount.objects.filter(start_date__lte=current_time, end_date__gte=current_time)[:10]
+
+#         response_data = []
+#         for discount in discounted_products:
+#             product = discount.product
+#             default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+#             image_url = default_image.image.url if default_image else None
+
+#             discounted_price = product.price - (product.price * discount.discount_percentage / 100)
+
+#             response_data.append({
+#                 "id": product.id,
+#                 "name": product.product_name,
+#                 "price": float(product.price),
+#                 "discounted_price": round(float(discounted_price), 2),
+#                 "discount": discount.discount_percentage,
+#                 "color": product.color,
+#                 "size": dict(Product.ITEM_SIZE_CHOICES).get(product.size) if product.size else None,
+#                 "shoes_size": dict(Product.SHOES_SIZE_CHOICES).get(product.shoes_size) if product.shoes_size else None,
+#                 "quantity": product.quantity,
+#                 "category": product.category.category_name if product.category else None,
+#                 "image": image_url,
+#                 "start_date": discount.start_date.date(),
+#                 "end_date": discount.end_date.date(),
+#                 "start_time": discount.start_date.time(),
+#                 "end_time": discount.end_date.time(),
+#             })
+
+      
+#         return Response(
+#             {
+#                 "status": 1,
+#                 "message": "Products fetched successfully.",
+#                 "data": response_data,
+#             },
+#             status=status.HTTP_200_OK,
+#         )
+
+
+class RandomProductList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Fetch all products and shuffle them
+        products = list(Product.objects.all())
+        random.shuffle(products)
+
+        if not products:
+            return Response(
+                {
+                    "status": 0,
+                    "message": "No products available.",
+                    "data": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serialized_products=[]
+        for product in products:
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+
+            product_data = {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),  # Convert Decimal to string for JSON
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": image_url,
+                'gender': product.gender,
+                'size': product.size,
+                'color': product.color,
+                'category': product.category.category_name,
+                'subcategory': product.subcategory.sub_category_name,
+                'quantity': product.quantity,
+                'item_view': product.item_view,
+              
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+              
+
+                
+            }
+            serialized_products.append(product_data)
+      
+
+      
+
+        # Serialize the products
+        # serializer = ProductDetailSerializer(products, many=True)
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": serialized_products,
+            }
+        )
+
+class DiscountedDetailedProductView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Get all discounted products where the discount is active
+        discount=request.query_params.get('discount')
+
+
+        current_time = now()
+        if discount:
+            discounted_products = ProductDiscount.objects.filter(start_date__lte=current_time, end_date__gte=current_time,discount_percentage=discount)
+            if not discounted_products or discount==0:
+                return Response(
+                    {
+                        "status": 0,
+                        "message": "No products available with this discount.",
+                        "data": [],
+                    }
+                )
+        else:
+            discounted_products = ProductDiscount.objects.filter(start_date__lte=current_time, end_date__gte=current_time)
+            if not discounted_products:
+                return Response(
+                    {
+                        "status": 0,
+                        "message": "Currently There is no Offer Available",
+                        "data": [],
+                    }
+                )
+        response_data = []
+        print(discounted_products)
+        for discount in discounted_products:
+            product = discount.product
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+
+            discounted_price = product.price - (product.price * discount.discount_percentage / 100)
+
+            response_data.append({
+                "id": product.id,
+                "name": product.product_name,
+                "price": float(product.price),
+                "discounted_price": round(float(discounted_price), 2),
+                "discount": discount.discount_percentage,
+                "color": product.color,
+                "size": dict(Product.ITEM_SIZE_CHOICES).get(product.size) if product.size else None,
+                "shoes_size": dict(Product.SHOES_SIZE_CHOICES).get(product.shoes_size) if product.shoes_size else None,
+                "quantity": product.quantity,
+                "category": product.category.category_name if product.category else None,
+                "image": image_url,
+                "start_date": discount.start_date.date(),
+                "end_date": discount.end_date.date(),
+                "start_time": discount.start_date.time(),
+                "end_time": discount.end_date.time(),
+            })
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": response_data,
+            }
+        )
+        
+        
