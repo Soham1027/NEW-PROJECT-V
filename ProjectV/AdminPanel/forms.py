@@ -160,11 +160,22 @@ class ProductDiscountForm(forms.Form):
 # class ProductVariantForm(forms.ModelForm):
 #     class Meta:
 #         model = ProductVariant
-#         fields = ['product', 'color', 'size', 'quantity', 'item_discount']
+#         fields = ['product_name', 'price', 'description', 'color', 'size', 'shoes_size', 'gender', 'quantity', 'item_view', 'recently_viewed', 'category', 'subcategory']
 
 #         widgets = {
-#             'product': forms.Select(attrs={
+#             'product_name': forms.TextInput(attrs={
 #                 'class': 'form-control',
+#                 'placeholder': 'Enter Product Name'
+#             }),
+#             'price': forms.NumberInput(attrs={
+#                 'class': 'form-control',
+#                 'placeholder': 'Enter Product Price',
+#                 'step': 0.01
+#             }),
+#             'description': forms.Textarea(attrs={
+#                 'class': 'form-control',
+#                 'placeholder': 'Enter Product Description',
+#                 'rows': 3
 #             }),
 #             'color': forms.TextInput(attrs={
 #                 'class': 'form-control',
@@ -173,15 +184,42 @@ class ProductDiscountForm(forms.Form):
 #             'size': forms.Select(attrs={
 #                 'class': 'form-control',
 #             }),
+#             'shoes_size': forms.Select(attrs={
+#                 'class': 'form-control',
+#             }),
+
+#             'gender': forms.Select(attrs={
+#                 'class': 'form-control',
+#             }),
 #             'quantity': forms.NumberInput(attrs={
 #                 'class': 'form-control',
 #                 'min': 0,
 #                 'value': 0
 #             }),
-#             'item_discount': forms.NumberInput(attrs={
+           
+#             'item_view': forms.NumberInput(attrs={
 #                 'class': 'form-control',
 #                 'min': 0,
-#                 'step': 0.01,
-#                 'value': 0.00
+#                 'value': 0
+#             }),
+#             'recently_viewed': forms.DateTimeInput(attrs={
+#                 'class': 'form-control',
+#                 'type': 'datetime-local'
+#             }),
+#              'category': forms.Select(attrs={
+#                 'class': 'form-control',
+#                 'id': 'category',  # Add an ID for JavaScript targeting
+#             }),
+#             'subcategory': forms.Select(attrs={
+#                 'class': 'form-control',
+#                 'id': 'subcategory',  # Add an ID for JavaScript targeting
 #             }),
 #         }
+#         def __init__(self, *args, **kwargs):
+#             category_id = kwargs.pop('category_id', None)
+#             super().__init__(*args, **kwargs)
+            
+#             if category_id:
+#                 self.fields['subcategory'].queryset = SubCategory.objects.filter(category_id=category_id)
+#             else:
+#                 self.fields['subcategory'].queryset = SubCategory.objects.none()

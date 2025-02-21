@@ -35,12 +35,16 @@ urlpatterns = [
  
    path('product_list/', ProductListView.as_view(), name='product_list'),
    # path('product_category/', ProductCategoryView.as_view(), name='product_category'),
-   path('product_category_detail/', CategoriesProductDetailView.as_view(), name='product_category_detail'),
+   path('product_category_filter/', CategoriesProductFilterView.as_view(), name='product_category_filter'),
 
    # path('dicounted_product_list/', DiscountedProducts.as_view(), name='dicounted_product_list'),
    path('random_product_list/', RandomProductList.as_view(), name='random_product_list'),
 
    path('dicounted_product/', DiscountedDetailedProductView.as_view(), name='dicounted_product'),
+   
+   path('search_product/', ProductSearchView.as_view(), name='search_product'),
+   path('search_dashboard/', SearchDashboardView.as_view(), name='search_dashboard'),
+
 
 
 

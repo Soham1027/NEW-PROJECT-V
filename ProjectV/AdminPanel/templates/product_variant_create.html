@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Product Variant{% endblock %}
+{% block title %}Product{% endblock %}
 {% block content %}
 <div class="page-body">
     <div class="container-fluid">
         <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
             <div class="col-6 col-md-6">
-                <h3>Add Product Variant</h3>
+                <h3>Add Product</h3>
             </div>
         </div>
         <div class="card">
@@ -14,29 +14,95 @@
                 {% csrf_token %}
                 <div class="card-body">
                     <div class="row mb-3">
-                        <h4 class="col-12">Product Variant Details</h4>
+                        <h4 class="col-12">Product Details</h4>
                     </div>
                     <div style="border-top: 1px solid #ccc; margin-top: 5px; margin-bottom: 20px;"></div>
 
                     <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
-                                <label class="form-label" for="product">Product</label>
-                                {{ form.product }}
-                                {% if form.product.errors %}
+                                <label class="form-label" for="product_name">Product Name</label>
+                                {{ form.product_name }}
+                                {% if form.product_name.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.product.errors %}
+                                        {% for error in form.product_name.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+    
+
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="price">Price</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                <div class="invalid-feedback d-block">
+                                        {% for error in form.price.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+        
+                                </div>  <!-- Closing div for invalid-feedback -->
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="description">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.description.errors %}  <!-- Changed from product_name to description -->
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
+                    </div>
 
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="item_view">Item View</label>
+                                {{ form.item_view }}
+                                {% if form.item_view.errors %}
+                                <div class="invalid-feedback d-block">
+                                        {% for error in form.item_view.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+        
+                                        </div>  <!-- Closing div for invalid-feedback -->
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <h5>Product Images</h5>
+                            <div id="image-upload-section">
+                                <div class="image-upload-item mb-3">
+                                    <input type="file" name="images[]" class="form-control" accept="image/*" required>
+                                    <input type="checkbox" name="default_image[]" class="form-check-input" value="1"> Default
+                                    
+                               </div>
+                            </div>
+                            <button type="button" id="add-image-button" class="btn btn-success">Add Image</button>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="color">Color</label>
-                                <input type="color" id="color" name="color" class="form-control" value="{{ form.color.value|default:'#000000' }}">
+                                <input type="text" id="color" name="color" class="form-control" value="{{ form.color.value|default:'#000000' }}">
                                 {% if form.color.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in form.color.errors %}
@@ -46,41 +112,130 @@
                                 {% endif %}
                             </div>
                         </div>
-                        
                     </div>
+
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="id_category">Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.category.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="id_subcategory">Subcategory</label>
+                                {{ form.subcategory }}
+                                {% if form.subcategory.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.subcategory.errors %}
+                                    <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                   
+                                    
+                    <div class="row" id="sizeRow">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="id_size">Size</label>
+                                {{ form.size }}
+                                {% if form.size.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.size.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="shoesSizeRow" style="display: none;">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="id_shoes_size">Shoes Size</label>
+                                {{ form.shoes_size }}  <!-- Update variable to match the form field for shoes size -->
+                                {% if form.shoes_size.errors %}  <!-- Check for errors on the correct field -->
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.shoes_size.errors %}  <!-- Updated to check errors on the correct form field -->
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
 
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="size">Size</label>
-                                {{ form.size }}
+                                <label class="form-label" for="id_gender">Gender</label>  <!-- Update for consistency in label for attribute -->
+                                {{ form.gender }}
+                                {% if form.gender.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.gender.errors %}  <!-- Update to check errors on the correct form field -->
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
+
+
+
+                    
 
                     <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="quantity">Quantity</label>
                                 {{ form.quantity }}
+                                {% if form.quantity.errors %}
+                                <div class="invalid-feedback d-block">
+                                        {% for error in form.quantity.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+        
+                                </div>  <!-- Closing div for invalid-feedback -->
+                                {% endif %}
                             </div>
                         </div>
-
-                      
                     </div>
-
-                  
 
                     <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="item_discount">Discount</label>
                                 {{ form.item_discount }}
+                                {% if form.item_discount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.item_discount.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                </div>
 
+                </div>
                 <div class="card-footer text-end">
                     <button class="btn btn-primary" type="submit">Save</button>
                     <input class="btn btn-light" type="reset" value="Cancel">
@@ -89,4 +244,151 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const addButton = document.getElementById("add-image-button");
+        const section = document.getElementById("image-upload-section");
+
+        // Add new image input field
+        addButton.addEventListener("click", function () {
+            var newItem = document.createElement("div");
+            newItem.classList.add("image-upload-item", "mb-3");
+
+            newItem.innerHTML = `
+                <input type="file" name="images[]" class="form-control" accept="image/*" required>
+                <input type="checkbox" name="default_image[]" class="form-check-input" value="1"> Default
+            `;
+
+            section.appendChild(newItem);
+        });
+
+        // Form validation on submit
+        const form = document.querySelector("form");
+        form.addEventListener("submit", function (e) {
+            let valid = true;
+
+            // Check if all file inputs have files selected
+            document.querySelectorAll('input[type="file"][name="images[]"]').forEach(input => {
+                if (!input.files.length) {
+                    valid = false;
+                    alert("All image fields must have a file selected.");
+                }
+            });
+
+            if (!valid) {
+                e.preventDefault();  // Prevent form submission if validation fails
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the category select element using the name attribute
+        const categorySelect = document.querySelector("[name='category']");
+        const sizeInput = document.querySelector("[name='size']"); // Input for size field
+        const shoesSizeInput = document.querySelector("[name='shoes_size']"); // Input for shoes size field
+
+        // Function to toggle visibility based on category selection
+        categorySelect.addEventListener('change', function() {
+            var category = this.value;
+            
+            // Log the selected category
+            console.log('Category selected: ' + category);
+
+            if (category === '2') {
+                // Log action when category is '2' (Shoes)
+                console.log('Selected category is Shoes. Hiding Size and showing Shoes Size.');
+                
+                // Hide size and show shoes size
+                document.getElementById('sizeRow').style.display = 'none';
+                document.getElementById('shoesSizeRow').style.display = 'block';
+                
+                // Set the value of size to shoes_size
+                sizeInput.value = shoesSizeInput.value;
+                console.log('Setting Size to Shoes Size: ' + sizeInput.value);
+            } else {
+                // Log action when category is not '2'
+                console.log('Selected category is not Shoes. Showing Size and hiding Shoes Size.');
+                
+                // Show size and hide shoes size
+                document.getElementById('sizeRow').style.display = 'block';
+                document.getElementById('shoesSizeRow').style.display = 'none';
+
+                // Reset size field if necessary (optional)
+                sizeInput.value = ''; 
+            }
+        });
+        
+        // Trigger the change event to set the initial state
+        var category = categorySelect.value;
+        console.log('Initial category selected: ' + category); // Log initial category value
+        categorySelect.dispatchEvent(new Event('change'));
+    });
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const categorySelect = document.querySelector("[name='category']");  
+    const subcategorySelect = document.querySelector("[name='subcategory']");  
+
+    if (!categorySelect || !subcategorySelect) {
+        console.error("Category or Subcategory dropdown not found");
+        return;
+    }
+
+    categorySelect.addEventListener("change", function() {
+        const categoryId = this.value.trim(); // Ensure we handle empty spaces
+
+        console.log("Category selected:", categoryId);
+
+        // Check if the selected category is empty or the placeholder "--------"
+        if (!categoryId || categoryId === "--------") {
+            console.log("No category selected or '--------' selected, showing all subcategories...");
+            
+            // Fetch all subcategories
+            fetch(`/get-subcategories/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Received all subcategories:", data);
+                    subcategorySelect.innerHTML = '<option value="">---------</option>';
+
+                    data.forEach(subcategory => {
+                        const option = document.createElement("option");
+                        option.value = subcategory.id;
+                        option.textContent = subcategory.sub_category_name;
+                        subcategorySelect.appendChild(option);
+                    });
+
+                    console.log("Subcategory options updated with all options");
+                })
+                .catch(error => console.error("Error fetching all subcategories:", error));
+
+            return;
+        }
+
+        // Fetch subcategories for the selected category
+        fetch(`/get-subcategories/?category_id=${categoryId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Received subcategories:", data);  
+                subcategorySelect.innerHTML = '<option value="">---------</option>';
+
+                data.forEach(subcategory => {
+                    const option = document.createElement("option");
+                    option.value = subcategory.id;
+                    option.textContent = subcategory.sub_category_name;
+                    subcategorySelect.appendChild(option);
+                });
+
+                console.log("Subcategory options updated");
+            })
+            .catch(error => console.error("Error fetching subcategories:", error));
+    });
+});
+</script>
+
 {% endblock %}

@@ -149,14 +149,51 @@ class ProductPercentageView(View):
         return render(request, 'product_discount.html', {'form': form})
 
 # class ProductVariantCreateView(View):
+
+
 #     def get(self, request):
 #         form = ProductVariantForm()
+     
 #         return render(request, 'product_variant_create.html', {'form': form})
-    
+
 #     def post(self, request):
+#         print(request.FILES)
 #         form = ProductVariantForm(request.POST)
+
+
 #         if form.is_valid():
-#             form.save()
-#             return redirect('dashboard')  # Replace 'dashboard' with your desired path
+#             product = form.save()
         
-#         return render(request, 'product_variant_create.html', {'form': form})
+
+#             # Handle multiple image uploads
+#             images = request.FILES.getlist('images[]')  # Get the list of image files
+#             default_images = request.POST.getlist('default_image[]')  # Get the list of default image checkboxes
+
+#             print(images)
+#             print(default_images)
+
+#             # Check if there are any selected default images
+#             default_image_set = False
+            
+#             for i, image in enumerate(images):
+#                 is_default = i == 0 and not default_images  # Set the first image as default if no checkbox is checked
+#                 if default_images and str(i) in default_images:
+#                     is_default = True
+
+#                 # Create a new ProductImages instance and associate it with the product
+#                 ProductImages.objects.create(
+#                     product_variant=product,
+#                     image=image,
+#                     is_default=is_default  # Mark it as the default image if applicable
+#                 )
+
+#                 if is_default:
+#                     default_image_set = True
+
+#             # Redirect to the desired path if the form was valid
+#             return redirect('dashboard')  # Redirect to the desired path
+
+#         # Print form errors for debugging
+#         print(form.errors)
+
+#         return render(request, 'product_variant_create.html',  {'form': form})

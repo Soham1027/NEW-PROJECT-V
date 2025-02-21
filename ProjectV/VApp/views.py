@@ -29,6 +29,8 @@ from django.db.models.functions import Coalesce
 from AdminPanel.models import *
 from django.db.models.functions import Lower
 
+from django.db.models import Q
+
 
 
 # Helper function to generate OTP
@@ -953,7 +955,7 @@ class ProductListView(ListAPIView):
         
 
 
-class CategoriesProductDetailView(APIView):
+class CategoriesProductFilterView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -964,15 +966,16 @@ class CategoriesProductDetailView(APIView):
 
         category = request.query_params.get("category", "").strip().lower()
         sub_category = request.query_params.get("sub_category", "").strip().lower()
+        gender=request.query_params.get("gender","").strip().lower()
 
         # Fetch products matching the category and subcategory
+
         products = Product.objects.filter(
-            category__category_name=category,
-            subcategory__sub_category_name=sub_category,
-         
-           
+            Q(category__category_name=category) |
+            Q(subcategory__sub_category_name=sub_category) |
+            Q(gender__iexact=gender)
         )
-        
+
         
         # Serialize products and include default image
         serialized_products = []
@@ -981,7 +984,7 @@ class CategoriesProductDetailView(APIView):
             image_url = default_image.image.url if default_image else None
 
             product_data = {
-                    "id": product.id,
+                "id": product.id,
                 "product_name": product.product_name,
                 "price": str(product.price),  # Convert Decimal to string for JSON
                 "description": product.description,
@@ -1197,3 +1200,127 @@ class DiscountedDetailedProductView(APIView):
         )
         
         
+class ProductSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        search_query = request.query_params.get("search", "").strip().lower()
+        if not search_query:
+            return Response(
+                {
+                    "status": 0,
+                    "message": "Please provide a search query.",
+                    "data": [],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        product_search=ProductSerach.objects.create(search=search_query)
+        # Get all products that match the search query
+        products = Product.objects.filter(Q(product_name__icontains=search_query) | Q(description__icontains=search_query) | Q(category__category_name__icontains=search_query) | Q(subcategory__sub_category_name=search_query))
+        if not products:
+            return Response(
+                {
+                    "status": 0,
+                    "message": "No products found matching your search query.",
+                    "data": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        response_data = []
+        for product in products:
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+            response_data.append({
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": float(product.price),
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": image_url,
+                "gender": product.gender,
+                "size": product.size,
+                "color": product.color,
+                "category": product.category.category_name,
+                "subcategory": product.subcategory.sub_category_name,
+                "quantity": product.quantity,
+                "item_view": product.item_view,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+          
+            })
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": response_data,
+            }
+        )
+
+class SearchDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        search_queries = ProductSerach.objects.all()[:10]
+       
+        # products = Product.objects.filter(
+        #     Q(product_name__icontains__in=search_queries) | 
+        #     Q(description__icontains__in=search_queries) | 
+        #     Q(category__category_name__icontains__in=search_queries) | 
+        #     Q(subcategory__sub_category_name__icontains__in=search_queries)
+        # )
+        query = Q()
+        for term in search_queries:
+            print(term)
+            query |= (
+                Q(product_name__icontains=term) |
+                Q(description__icontains=term) |
+                Q(category__category_name__icontains=term) |
+                Q(subcategory__sub_category_name__icontains=term)
+            )
+        products = Product.objects.filter(query)
+        
+
+
+        search_history = []
+        recommandations=[]
+        for search_query in search_queries:
+            search_history.append({
+                "search_query": search_query.search,
+                "timestamp": search_query.created_at,
+            })
+        
+        for product in products:
+                recommandations.append({
+                    "id": product.id,
+                    "category": product.category.category_name,
+                })
+                recommandations.append({
+                    "id": product.id,
+                    "subcategory": product.subcategory.sub_category_name,
+                })
+        # for produ
+        random.shuffle(recommandations)
+        print(recommandations)
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Search queries fetched successfully.",
+                "data": {
+                    "search_history": search_history,
+                    "recommandations": recommandations,
+                }
+            }
+        )
+            
