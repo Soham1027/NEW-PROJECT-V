@@ -29,7 +29,8 @@ urlpatterns = [
 
    
     
-   path('product_detail/', ProductDetail.as_view(), name='product_detail'),
+   # path('product_detail/', ProductDetail.as_view(), name='product_detail'),
+   path('product_detail/', ProductDetailAPIView.as_view(), name='product_detail'),
 
    path('product_like/', ProductLikeAPIView.as_view(), name='product_like'),
  
@@ -44,6 +45,8 @@ urlpatterns = [
    
    path('search_product/', ProductSearchView.as_view(), name='search_product'),
    path('search_dashboard/', SearchDashboardView.as_view(), name='search_dashboard'),
+
+   path('product_filter/', ProductMainFilter.as_view(), name='product_filter'),
 
 
 

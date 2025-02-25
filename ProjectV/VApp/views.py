@@ -523,23 +523,70 @@ class PaymentCardView(APIView):
 
 
 
-class ProductDetail(APIView):
+# class ProductDetail(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def get(self, request, *args, **kwargs):
+#         product_id = request.query_params.get('id')  # Get ID from query params
+#         if not product_id:
+#             return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             product = Product.objects.prefetch_related('images').get(id=product_id)
+#             product.recently_viewed = timezone.localtime(timezone.now())
+#             product.save()
+
+#             serializer = ProductDetailSerializer(product)
+#             return Response({
+#                 'status': 1,
+#                 'message': 'Product fetched successfully.',
+#                 'data': serializer.data
+#             }, status=status.HTTP_200_OK)
+         
+#         except Product.DoesNotExist:
+#             return Response({
+#                 'status': 0,
+#                 'message': 'Product not found.',
+#                 'errors': {}
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request, *args, **kwargs):
         product_id = request.query_params.get('id')  # Get ID from query params
         if not product_id:
             return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         try:
-            product = Product.objects.prefetch_related('images').get(id=product_id)
+            product = Product.objects.prefetch_related('images', 'variants').get(id=product_id)
             product.recently_viewed = timezone.localtime(timezone.now())
             product.save()
 
             serializer = ProductDetailSerializer(product)
+            
+            # Fetch variants
+            variants = ProductVariant.objects.filter(product=product)
+            variants_data = [
+                {
+                    "id": variant.id,
+                    "color": variant.color,
+                    "size": dict(ProductVariant.ITEM_SIZE_CHOICES).get(variant.size),
+                    "quantity": variant.quantity,
+                   "variant_images": [image.variant_image.url if image.variant_image else image.image.url for image in ProductImages.objects.filter(product_variants=variant)]
+                }
+                for variant in variants
+            ]
+            
+            # Fetch product images separately
+            product_images = [image.image.url for image in ProductImages.objects.filter(product=product)]
+            
             return Response({
                 'status': 1,
                 'message': 'Product fetched successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                # 'product_images': product_images,  # Now explicitly returning product images
+                'variants': variants_data,
             }, status=status.HTTP_200_OK)
          
         except Product.DoesNotExist:
@@ -548,7 +595,6 @@ class ProductDetail(APIView):
                 'message': 'Product not found.',
                 'errors': {}
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
   
 ###################### Product LIKE ##################################
@@ -1294,6 +1340,7 @@ class SearchDashboardView(APIView):
 
         search_history = []
         recommandations=[]
+        discover=[]
         for search_query in search_queries:
             search_history.append({
                 "search_query": search_query.search,
@@ -1309,8 +1356,33 @@ class SearchDashboardView(APIView):
                     "id": product.id,
                     "subcategory": product.subcategory.sub_category_name,
                 })
+       
+        for product in products:
+            default_image = ProductImages.objects.filter(product=product, is_default=True).first()
+            image_url = default_image.image.url if default_image else None
+            discover.append({
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": float(product.price),
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": image_url,
+                "gender": product.gender,
+                "size": product.size,
+                "color": product.color,
+                "category": product.category.category_name,
+                "subcategory": product.subcategory.sub_category_name,
+                "quantity": product.quantity,
+                "item_view": product.item_view,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+          
+            })
+          
+               
         # for produ
         random.shuffle(recommandations)
+        random.shuffle(discover)
         print(recommandations)
 
         return Response(
@@ -1320,7 +1392,165 @@ class SearchDashboardView(APIView):
                 "data": {
                     "search_history": search_history,
                     "recommandations": recommandations,
+                    "discover": discover,
                 }
             }
         )
             
+
+
+
+class ProductMainFilter(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Prefetch default images
+        default_images_prefetch = Prefetch(
+            "images",
+            queryset=ProductImages.objects.filter(is_default=True),
+            to_attr="default_images",
+        )
+
+        def parse_int_list(param):
+            """Safely parse a comma-separated list of integers from query parameters."""
+            values = request.query_params.get(param, "")
+            return [int(x) for x in values.split(",") if x.strip().isdigit()]
+
+        # Extract query parameters
+        category_raw = request.query_params.get("category", "")
+        category = [c.strip().lower() for c in category_raw.split(",") if c.strip()]
+
+        sub_category_raw = request.query_params.get("sub_category", "")
+        sub_category = [s.strip().lower() for s in sub_category_raw.split(",") if s.strip()]
+
+
+     
+        size_raw = request.query_params.get("size", "")
+        size = [s.strip().lower() for s in size_raw.split(",") if s.strip()]
+
+        shoes_size_raw = request.query_params.get("shoes_size", "")
+        shoes_size = [s.strip().lower() for s in shoes_size_raw.split(",") if s.strip()]
+
+        color_raw = request.query_params.get("color", "")
+        color = [c.strip().lower() for c in color_raw.split(",") if c.strip()]
+
+
+      
+  
+        price_min = request.query_params.get("price_min")
+        price_max = request.query_params.get("price_max")
+        sorting = request.query_params.get("sorting", "").strip().lower()
+
+        # Filtering logic
+        filters = Q()
+        if category:
+            filters &= Q(category__category_name__in=category)
+        if sub_category:
+            filters &= Q(subcategory__sub_category_name__in=sub_category)
+        if size:
+            filters &= Q(size__in=size)
+        if shoes_size:
+            filters &= Q(shoes_size__in=shoes_size)
+        if color:
+            filters &= Q(color__in=color)
+        if price_min and price_min.isdigit():
+            filters &= Q(price__gte=int(price_min))
+        if price_max and price_max.isdigit():
+            filters &= Q(price__lte=int(price_max))
+
+        # Get filtered products
+        products = Product.objects.filter(filters).prefetch_related(default_images_prefetch)
+        print(products)
+
+        # Shoes category validation (AFTER filtering)
+        if "shoes" in category and not shoes_size:
+
+            return Response(
+                {"status": 0, "message": "Shoes size is required when category is 'shoes'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Apply sorting
+        if sorting == "popular":
+            products = products.annotate(
+                like_count=Coalesce(
+                    Subquery(
+                        ProductLike.objects.filter(products=OuterRef("id"))
+                        .values("products")
+                        .annotate(like_count=Count("products"))
+                        .values("like_count")
+                    ),
+                    Value(0),
+                    output_field=IntegerField(),
+                )
+            ).order_by("-like_count")
+
+        elif sorting == "new":
+            products = products.order_by("-created_at")
+
+        elif sorting == "price_high_to_low":
+            products = products.order_by("-price")
+
+        elif sorting == "price_low_to_high":
+            products = products.order_by("price")
+
+        # Serialize products
+        serialized_products = [
+            {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": product.default_images[0].image.url if product.default_images else None,
+                "gender": product.gender,
+                "size": product.size,
+                "color": product.color,
+                "category": product.category.category_name,
+                "subcategory": product.subcategory.sub_category_name,
+                "quantity": product.quantity,
+                "item_view": product.item_view,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+                # "like_count": product.like_count  if sorting == "popular" else None,
+            }
+            for product in products
+        ]
+
+        if  sorting == "popular":
+             serialized_products = [
+            {
+                "id": product.id,
+                "product_name": product.product_name,
+                "price": str(product.price),
+                "description": product.description,
+                "recently_viewed": product.recently_viewed,
+                "image": product.default_images[0].image.url if product.default_images else None,
+                "gender": product.gender,
+                "size": product.size,
+                "color": product.color,
+                "category": product.category.category_name,
+                "subcategory": product.subcategory.sub_category_name,
+                "quantity": product.quantity,
+                "item_view": product.item_view,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at,
+                "like_count": product.like_count,
+            }
+            for product in products
+        ]
+
+
+        return Response(
+            {
+                "status": 1,
+                "message": "Products fetched successfully.",
+                "data": serialized_products,
+            },
+            status=status.HTTP_200_OK,
+        )

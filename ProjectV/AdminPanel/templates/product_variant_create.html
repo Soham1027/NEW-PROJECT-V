@@ -21,11 +21,11 @@
                     <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
-                                <label class="form-label" for="product_name">Product Name</label>
-                                {{ form.product_name }}
-                                {% if form.product_name.errors %}
+                                <label class="form-label" for="product_name">Product</label>
+                                {{ form.product }}
+                                {% if form.product.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.product_name.errors %}
+                                        {% for error in form.product.errors %}
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
@@ -37,11 +37,11 @@
 
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
-                                <label class="form-label" for="price">Price</label>
-                                {{ form.price }}
-                                {% if form.price.errors %}
+                                <label class="form-label" for="price">Color</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
                                 <div class="invalid-feedback d-block">
-                                        {% for error in form.price.errors %}
+                                        {% for error in form.color.errors %}
                                             <p>{{ error }}</p>
                                         {% endfor %}
         
@@ -54,11 +54,11 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="description">Description</label>
-                                {{ form.description }}
-                                {% if form.description.errors %}
+                                <label class="form-label" for="description">size</label>
+                                {{ form.size }}
+                                {% if form.size.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.description.errors %}  <!-- Changed from product_name to description -->
+                                        {% for error in form.size.errors %}  <!-- Changed from product_name to description -->
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
@@ -70,11 +70,11 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="item_view">Item View</label>
-                                {{ form.item_view }}
-                                {% if form.item_view.errors %}
+                                <label class="form-label" for="item_view">Shoes size View</label>
+                                {{ form.shoes_size }}
+                                {% if form.shoes_size.errors %}
                                 <div class="invalid-feedback d-block">
-                                        {% for error in form.item_view.errors %}
+                                        {% for error in form.shoes_size.errors %}
                                             <p>{{ error }}</p>
                                         {% endfor %}
         
@@ -98,7 +98,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="color">Color</label>
@@ -112,17 +112,17 @@
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="id_category">Category</label>
-                                {{ form.category }}
-                                {% if form.category.errors %}
+                                <label class="form-label" for="id_category">Quantity</label>
+                                {{ form.quantity }}
+                                {% if form.quantity.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.category.errors %}
+                                        {% for error in form.quantity.errors %}
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
@@ -131,7 +131,7 @@
                         </div>
                     </div>
                     
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
                                 <label class="form-label" for="id_subcategory">Subcategory</label>
@@ -147,9 +147,9 @@
                         </div>
                     </div>
                     
-                   
+                    -->
                                     
-                    <div class="row" id="sizeRow">
+                    <!-- <div class="row" id="sizeRow">
                         <div class="col-12">
                             <div class="mb-3">
                                 <label class="form-label" for="id_size">Size</label>
@@ -163,16 +163,16 @@
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="row" id="shoesSizeRow" style="display: none;">
+                    <!-- <div class="row" id="shoesSizeRow" style="display: none;">
                         <div class="col-12">
                             <div class="mb-3">
                                 <label class="form-label" for="id_shoes_size">Shoes Size</label>
-                                {{ form.shoes_size }}  <!-- Update variable to match the form field for shoes size -->
-                                {% if form.shoes_size.errors %}  <!-- Check for errors on the correct field -->
+                                {{ form.shoes_size }} 
+                                {% if form.shoes_size.errors %} 
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.shoes_size.errors %}  <!-- Updated to check errors on the correct form field -->
+                                        {% for error in form.shoes_size.errors %}  
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
@@ -180,27 +180,27 @@
                             </div>
                         </div>
                     </div>
+ -->
 
-
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
-                                <label class="form-label" for="id_gender">Gender</label>  <!-- Update for consistency in label for attribute -->
+                                <label class="form-label" for="id_gender">Gender</label>  
                                 {{ form.gender }}
                                 {% if form.gender.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.gender.errors %}  <!-- Update to check errors on the correct form field -->
+                                        {% for error in form.gender.errors %}  
                                             <p>{{ error }}</p>
                                         {% endfor %}
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
 
 
-                    
+<!--                     
 
                     <div class="row">
                         <div class="col-12 col-md-6">
@@ -213,13 +213,13 @@
                                             <p>{{ error }}</p>
                                         {% endfor %}
         
-                                </div>  <!-- Closing div for invalid-feedback -->
+                                </div> 
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="item_discount">Discount</label>
@@ -233,7 +233,7 @@
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                 </div>
                 <div class="card-footer text-end">

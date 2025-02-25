@@ -148,52 +148,46 @@ class ProductPercentageView(View):
         
         return render(request, 'product_discount.html', {'form': form})
 
-# class ProductVariantCreateView(View):
+class ProductVariantCreateView(View):
+    def get(self, request):
+        form = ProductVariantForm()
+        return render(request, 'product_variant_create.html', {'form': form})
 
+    def post(self, request):
+        form = ProductVariantForm(request.POST)
+        if form.is_valid():
+            product_variant = form.save()
+            images = request.FILES.getlist('images[]')
+            default_images = request.POST.getlist('default_image[]')
 
-#     def get(self, request):
-#         form = ProductVariantForm()
-     
-#         return render(request, 'product_variant_create.html', {'form': form})
+            # Ensure at least one image is set as default
+            default_image_set = False
 
-#     def post(self, request):
-#         print(request.FILES)
-#         form = ProductVariantForm(request.POST)
+            for i, image in enumerate(images):
+                is_default = False
 
-
-#         if form.is_valid():
-#             product = form.save()
-        
-
-#             # Handle multiple image uploads
-#             images = request.FILES.getlist('images[]')  # Get the list of image files
-#             default_images = request.POST.getlist('default_image[]')  # Get the list of default image checkboxes
-
-#             print(images)
-#             print(default_images)
-
-#             # Check if there are any selected default images
-#             default_image_set = False
+                if default_images and str(i) in default_images:
+                    is_default = True
+                elif i == 0 and not default_images:  # Default first image if none selected
+                    is_default = True
+                
+                # Create ProductImages instance (Removed 'product=product_variant.product')
+                product_image = ProductImages.objects.create(
+                        product_variants=product_variant,  # Associate only with the variant
+                        variant_image=image,  # Assign the uploaded image correctly
+                        is_default=is_default
+                    )
+                # Ensure only one image is default
+                if is_default:
+                    default_image_set = True
             
-#             for i, image in enumerate(images):
-#                 is_default = i == 0 and not default_images  # Set the first image as default if no checkbox is checked
-#                 if default_images and str(i) in default_images:
-#                     is_default = True
+            # If no image was set as default, set the first one as default
+            if not default_image_set and images:
+                first_image = ProductImages.objects.filter(product_variants=product_variant).first()
+                if first_image:
+                    first_image.is_default = True
+                    first_image.save()
 
-#                 # Create a new ProductImages instance and associate it with the product
-#                 ProductImages.objects.create(
-#                     product_variant=product,
-#                     image=image,
-#                     is_default=is_default  # Mark it as the default image if applicable
-#                 )
+            return redirect('dashboard')
 
-#                 if is_default:
-#                     default_image_set = True
-
-#             # Redirect to the desired path if the form was valid
-#             return redirect('dashboard')  # Redirect to the desired path
-
-#         # Print form errors for debugging
-#         print(form.errors)
-
-#         return render(request, 'product_variant_create.html',  {'form': form})
+        return render(request, 'product_variant_create.html', {'form': form})

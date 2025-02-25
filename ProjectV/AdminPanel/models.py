@@ -16,7 +16,10 @@ def product_image_upload_path(instance, filename):
     """
     ext = filename.split('.')[-1]  # Get the file extension
     unique_id = uuid.uuid4().hex[:8]  # Generate an 8-character unique ID
-    filename = f"{instance.product.id}_{unique_id}.{ext}"
+    if instance.product_variants:
+        filename = f"{instance.product_variants.id}_{unique_id}.{ext}"
+    else:
+        filename = f"{instance.product.id}_{unique_id}.{ext}"
     return os.path.join("product_images", filename)
 
 class ProductCategory(models.Model):
@@ -135,11 +138,21 @@ class ProductVariant(models.Model):
         (6, 'XXL'),
         (7, 'XXXL'),
     ]
+    SHOES_SIZE_CHOICES = [
+        (1, '6'),
+        (2, '7'),
+        (3, '8'),
+        (4, '9'),
+        (5, '10'),
+        (6, '11'),
+        (7, '12'),
+    ]
 
     id = models.AutoField(primary_key=True)
-    product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
-    color = models.CharField(max_length=50)
-    size = models.IntegerField(choices=ITEM_SIZE_CHOICES)
+    product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE,blank=True, null=True)
+    color = models.CharField(max_length=50, blank=True, null=True)
+    size = models.IntegerField(choices=ITEM_SIZE_CHOICES,blank=True, null=True)
+    shoes_size = models.IntegerField(choices=SHOES_SIZE_CHOICES, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
 
  
@@ -157,9 +170,10 @@ class ProductVariant(models.Model):
 
 class ProductImages(models.Model):
     id = models.AutoField(primary_key=True)
-    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
-    product_variants_image = models.ForeignKey(ProductVariant, related_name='images', on_delete=models.CASCADE, blank=True, null=True)
-    image = models.ImageField(upload_to=product_image_upload_path)
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE,blank=True, null=True )
+    product_variants= models.ForeignKey(ProductVariant, related_name='images', on_delete=models.CASCADE, blank=True, null=True)
+    image = models.ImageField(upload_to=product_image_upload_path,blank=True, null=True)
+    variant_image= models.ImageField(upload_to=product_image_upload_path,blank=True, null=True)
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
