@@ -50,6 +50,8 @@ urlpatterns = [
    path('product_filter/', ProductMainFilter.as_view(), name='product_filter'),
 
    path('product_purchase/', PurchaseProductView.as_view(), name='product_purchase'),
+   path('discount_product_purchase/', PurchaseDiscountedProductView.as_view(), name='discount_product_purchase'),
+
 
 
 

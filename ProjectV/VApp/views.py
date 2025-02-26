@@ -612,6 +612,7 @@ class ProductDetailAPIView(APIView):
         try:
             # Check if the product has an active discount
             current_time=now()
+            print(current_time)
             try:
                 discount = ProductDiscount.objects.get(product__id=product_id,start_date__lte=current_time, end_date__gte=current_time)
                 product = discount.product
@@ -1758,9 +1759,179 @@ class PurchaseProductView(APIView):
             )
 
             return Response(
-                {"status": 1, "message": "Product purchased successfully."},
+                {
+                    "status": 1,
+                    "message": "Products fetched successfully.",
+                    # "data": ,
+                },
                 status=status.HTTP_200_OK,
             )
+
+        except Product.DoesNotExist:
+            return Response(
+                {"status": 0, "message": "Product not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+
+
+class PurchaseDiscountedProductView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Extract data from request
+        product_id = request.data.get("product_id")
+        product_variant_id = request.data.get("product_variant_id")
+        quantity = request.data.get("quantity")
+        color = request.data.get("color")
+        size = request.data.get("size")
+        shoes_size = request.data.get("shoes_size")
+
+        # Validate required fields
+        if not product_id or not quantity or not color:
+            return Response(
+                {"status": 0, "message": "Product ID, quantity, and color are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Fetch product
+            product = Product.objects.get(id=product_id)
+
+            # Check if the product has an active discount
+            active_discount = ProductDiscount.objects.filter(
+                product=product,
+                start_date__lte=now(),
+                end_date__gte=now()
+            ).order_by('-discount_percentage').first()
+
+            discount_percentage = int(active_discount.discount_percentage) if active_discount else 0
+            original_price = int(product.price)
+            discounted_price = original_price * (1 - discount_percentage / 100)
+
+            # Ensure sufficient stock in the main product (if variant not used)
+            if not product_variant_id:
+                if int(product.quantity) < int(quantity):
+                    return Response(
+                        {"status": 0, "message": "Not enough quantity in stock."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if product.quantity == 0:
+                    return Response(
+                        {"status": 0, "message": "Product out of stock."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # Handle category-specific validation
+            if product.category.category_name.lower() == "shoes" and not shoes_size:
+                return Response(
+                    {"status": 0, "message": "Shoes size is required when category is 'Shoes'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # If variant ID is provided, fetch the variant
+            if product_variant_id:
+                try:
+                    variant = ProductVariant.objects.get(id=product_variant_id,product__id=product.id)
+
+                    # Check variant stock
+                    if int(variant.quantity) < int(quantity):
+                        return Response(
+                            {"status": 0, "message": "Not enough quantity in stock for this variant."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if variant.quantity == 0:
+                        return Response(
+                            {"status": 0, "message": "Product variant out of stock."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    # Reduce stock
+                    variant.quantity -= int(quantity)
+                    variant.save()
+
+                    # Save purchase record
+                    PurchasedProduct.objects.create(
+                        product=product,
+                        product_variant=variant,
+                        quantity=quantity,
+                        color=color,
+                        size=None,  # Ensuring size is not used for shoes
+                        shoes_size=shoes_size,
+                    )
+
+                    response_data = {
+                        "status": 1,
+                        "message": "Product variant purchased successfully.",
+                        "data": {
+                            "id": product.id,
+                            "name": product.product_name,
+                            "price": original_price,
+                            "discounted_price": round(discounted_price, 2) if active_discount else None,
+                            "discount": discount_percentage if active_discount else None,
+                            "color": product.color,
+                            "size": dict(Product.ITEM_SIZE_CHOICES).get(product.size) if product.size else None,
+                            "shoes_size": dict(Product.SHOES_SIZE_CHOICES).get(product.shoes_size) if product.shoes_size else None,
+                            "quantity": product.quantity,
+                            "category": product.category.category_name if product.category else None,
+                            "variant": {
+                                "variant_id": variant.id,
+                                "variant_color": variant.color,
+                                "variant_size": variant.size,
+                                "variant_shoes_size": variant.shoes_size,
+                                "variant_price": float(variant.product.price),
+                                "variant_discounted_price": round(discounted_price, 2) if active_discount else None,
+                                "variant_quantity": variant.quantity,
+                            },
+                        },
+                    }
+
+                    return Response(response_data, status=status.HTTP_200_OK)
+
+                except ProductVariant.DoesNotExist:
+                    return Response(
+                        {"status": 0, "message": "Product variant not found."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+            # If no variant ID, process main product purchase
+            product.quantity -= int(quantity)
+            product.save()
+
+            # Save purchase record
+            PurchasedProduct.objects.create(
+                product=product,
+                product_variant=None,
+                quantity=quantity,
+                color=color,
+                size=size,
+                shoes_size=shoes_size,
+            )
+
+            response_data = {
+                "status": 1,
+                "message": "Product purchased successfully.",
+                "data": {
+                    "id": product.id,
+                    "name": product.product_name,
+                    "price": original_price,
+                    "discounted_price": round(discounted_price, 2) if active_discount else None,
+                    "discount": discount_percentage if active_discount else None,
+                    "color": product.color,
+                    "size": dict(Product.ITEM_SIZE_CHOICES).get(product.size) if product.size else None,
+                    "shoes_size": dict(Product.SHOES_SIZE_CHOICES).get(product.shoes_size) if product.shoes_size else None,
+                    "quantity": product.quantity,
+                    "category": product.category.category_name if product.category else None,
+                },
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
         except Product.DoesNotExist:
             return Response(
