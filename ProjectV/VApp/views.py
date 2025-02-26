@@ -550,22 +550,86 @@ class PaymentCardView(APIView):
 #             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class ProductDetailAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+    
+#     def get(self, request, *args, **kwargs):
+#         product_id = request.query_params.get('id')  # Get ID from query params
+#         if not product_id:
+#             return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         try:
+#             product = Product.objects.prefetch_related('images', 'variants').get(id=product_id)
+#             product.recently_viewed = timezone.localtime(timezone.now())
+#             product.save()
+
+#             serializer = ProductDetailSerializer(product)
+            
+#             # Fetch variants
+#             variants = ProductVariant.objects.filter(product=product)
+#             variants_data = [
+#                 {
+#                     "id": variant.id,
+#                     "color": variant.color,
+#                     "size": dict(ProductVariant.ITEM_SIZE_CHOICES).get(variant.size),
+#                     "quantity": variant.quantity,
+#                    "variant_images": [image.variant_image.url if image.variant_image else image.image.url for image in ProductImages.objects.filter(product_variants=variant)]
+#                 }
+#                 for variant in variants
+#             ]
+            
+#             # Fetch product images separately
+#             product_images = [image.image.url for image in ProductImages.objects.filter(product=product)]
+            
+#             return Response({
+#                 'status': 1,
+#                 'message': 'Product fetched successfully.',
+#                 'data': serializer.data,
+#                 # 'product_images': product_images,  # Now explicitly returning product images
+#                 'variants': variants_data,
+#             }, status=status.HTTP_200_OK)
+         
+#         except Product.DoesNotExist:
+#             return Response({
+#                 'status': 0,
+#                 'message': 'Product not found.',
+#                 'errors': {}
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+  
+
+
 class ProductDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request, *args, **kwargs):
-        product_id = request.query_params.get('id')  # Get ID from query params
+        product_id = request.query_params.get("id")  # Get ID from query params
         if not product_id:
-            return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            product = Product.objects.prefetch_related('images', 'variants').get(id=product_id)
+            # Check if the product has an active discount
+            current_time=now()
+            try:
+                discount = ProductDiscount.objects.get(product__id=product_id,start_date__lte=current_time, end_date__gte=current_time)
+                product = discount.product
+                discounted_price = product.price - (
+                    product.price * discount.discount_percentage / 100
+                )
+            except ProductDiscount.DoesNotExist:
+                product = Product.objects.prefetch_related("images", "variants").get(
+                    id=product_id
+                )
+                discounted_price = None
+
             product.recently_viewed = timezone.localtime(timezone.now())
             product.save()
 
             serializer = ProductDetailSerializer(product)
-            
-            # Fetch variants
+
+            # Fetch product variants
             variants = ProductVariant.objects.filter(product=product)
             variants_data = [
                 {
@@ -573,30 +637,64 @@ class ProductDetailAPIView(APIView):
                     "color": variant.color,
                     "size": dict(ProductVariant.ITEM_SIZE_CHOICES).get(variant.size),
                     "quantity": variant.quantity,
-                   "variant_images": [image.variant_image.url if image.variant_image else image.image.url for image in ProductImages.objects.filter(product_variants=variant)]
+                    "variant_images": [
+                        image.variant_image.url if image.variant_image else image.image.url
+                        for image in ProductImages.objects.filter(product_variants=variant,is_default=True)
+                    ],
                 }
                 for variant in variants
             ]
-            
+
             # Fetch product images separately
             product_images = [image.image.url for image in ProductImages.objects.filter(product=product)]
-            
-            return Response({
-                'status': 1,
-                'message': 'Product fetched successfully.',
-                'data': serializer.data,
-                # 'product_images': product_images,  # Now explicitly returning product images
-                'variants': variants_data,
-            }, status=status.HTTP_200_OK)
-         
-        except Product.DoesNotExist:
-            return Response({
-                'status': 0,
-                'message': 'Product not found.',
-                'errors': {}
-            }, status=status.HTTP_400_BAD_REQUEST)
 
-  
+            response_data = {
+                "id": product.id,
+                "name": product.product_name,
+                "price": float(product.price),
+                "discounted_price": round(float(discounted_price), 2) if discounted_price else None,
+                "discount": discount.discount_percentage if discounted_price else None,
+                "color": product.color,
+                "size": dict(Product.ITEM_SIZE_CHOICES).get(product.size) if product.size else None,
+                "shoes_size": dict(Product.SHOES_SIZE_CHOICES).get(product.shoes_size)
+                if product.shoes_size
+                else None,
+                "quantity": product.quantity,
+                "category": product.category.category_name if product.category else None,
+                "images": product_images,
+                "variants": variants_data,
+            }
+
+            # Add discount details if applicable
+            if discounted_price:
+                response_data.update(
+                    {
+                        "start_date": discount.start_date.date(),
+                        "end_date": discount.end_date.date(),
+                        "start_time": discount.start_date.time(),
+                        "end_time": discount.end_date.time(),
+                    }
+                )
+
+            return Response(
+                {
+                    "status": 1,
+                    "message": "Product fetched successfully.",
+                    "data": response_data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Product.DoesNotExist:
+            return Response(
+                {
+                    "status": 0,
+                    "message": "Product not found.",
+                    "errors": {},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
 ###################### Product LIKE ##################################
 class ProductLikeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -764,14 +862,7 @@ class ProductListView(ListAPIView):
               
                 "created_at": product.created_at,
                 "updated_at": product.updated_at,
-              
-
-
-            
-              
-              
-
-                
+                  
             }
 
             if product.category:
@@ -1554,3 +1645,125 @@ class ProductMainFilter(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+
+class PurchaseProductView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Set language preference
+        language = request.headers.get("Language", "en")
+        if language in ["en", "ar"]:
+            activate(language)
+
+        # Extract data from request
+        product_id = request.data.get("product_id")
+        product_variant_id = request.data.get("product_variant_id", None)
+        quantity = request.data.get("quantity")
+        color = request.data.get("color")
+        size = request.data.get("size", None)
+        shoes_size = request.data.get("shoes_size", None)
+
+        # Validate required fields
+        if not product_id or not quantity or not color:
+            return Response(
+                {"status": 0, "message": "Product ID, quantity, and color are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Fetch product
+            product = Product.objects.get(id=product_id)
+
+            # Ensure sufficient stock in the main product (if variant not used)
+            if not product_variant_id:
+                if int(product.quantity) < int(quantity):
+                    return Response(
+                        {"status": 0, "message": "Not enough quantity in stock."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if product.quantity == 0:
+                    return Response(
+                        {"status": 0, "message": "Product out of stock."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # Handle category-specific validation
+            if product.category.category_name.lower() == "shoes":
+                if not shoes_size:
+                    return Response(
+                        {"status": 0, "message": "Shoes size is required when category is 'Shoes'."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                size = None  # Ensure size is not used for shoes
+
+            # If variant ID is provided, fetch the variant
+            if product_variant_id:
+                try:
+                    variant = ProductVariant.objects.get(
+                        id=product_variant_id)
+                    print(variant.quantity)
+                   
+
+                    # Check variant stock
+                    if int(variant.quantity) < int(quantity):
+                        return Response(
+                            {"status": 0, "message": "Not enough quantity in stock for this variant."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if variant.quantity == 0:
+                        return Response(
+                            {"status": 0, "message": "Product variant out of stock."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    # Reduce stock
+                    variant.quantity -= int(quantity)
+                    variant.save()
+
+                    # Save purchase record
+                    PurchasedProduct.objects.create(
+                        product=product,
+                        product_variant=variant,
+                        quantity=quantity,
+                        color=color,
+                        size=size,
+                        shoes_size=shoes_size,
+                    )
+
+                    return Response(
+                        {"status": 1, "message": "Product variant purchased successfully."},
+                        status=status.HTTP_200_OK,
+                    )
+
+                except ProductVariant.DoesNotExist:
+                    return Response(
+                        {"status": 0, "message": "Product variant not found."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+            # If no variant ID, process main product purchase
+            product.quantity -= int(quantity)
+            product.save()
+
+            # Save purchase record
+            PurchasedProduct.objects.create(
+                product=product,
+                product_variant=None,
+                quantity=quantity,
+                color=color,
+                size=size,
+                shoes_size=shoes_size,
+            )
+
+            return Response(
+                {"status": 1, "message": "Product purchased successfully."},
+                status=status.HTTP_200_OK,
+            )
+
+        except Product.DoesNotExist:
+            return Response(
+                {"status": 0, "message": "Product not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )

@@ -218,3 +218,40 @@ class ProductSerach(models.Model):
         ordering = ['-created_at']
         db_table = 'product_searches'
         
+
+class PurchasedProduct(models.Model):
+    ITEM_SIZE_CHOICES = [
+        (1, 'Extra Small'),
+        (2, 'Small'),
+        (3, 'Medium'),
+        (4, 'Large'),
+        (5, 'XL'),
+        (6, 'XXL'),
+        (7, 'XXXL'),
+    ]
+    SHOES_SIZE_CHOICES = [
+        (1, '6'),
+        (2, '7'),
+        (3, '8'),
+        (4, '9'),
+        (5, '10'),
+        (6, '11'),
+        (7, '12'),
+    ]
+
+    id=models.AutoField(primary_key=True)
+    product=models.ForeignKey(Product,on_delete=models.CASCADE,blank=True, null=True)
+    product_variant=models.ForeignKey(ProductVariant,on_delete=models.CASCADE,blank=True, null=True)
+    quantity=models.PositiveIntegerField(default=0)
+    color=models.CharField(max_length=50)
+    size = models.IntegerField(choices=ITEM_SIZE_CHOICES,blank=True, null=True)
+    shoes_size = models.IntegerField(choices=SHOES_SIZE_CHOICES, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.product.product_name} - {self.color} - {dict(self.product.ITEM_SIZE_CHOICES).get(self.size)}"
+    
+    class Meta:
+        verbose_name_plural = 'Purchased Products'
+        ordering = ['-created_at']
